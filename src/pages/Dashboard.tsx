@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { AlertCircle } from "lucide-react";
 import {
   PieChart,
@@ -33,7 +33,11 @@ import { getCategoryStyle } from "../lib/chartCategoryStyles";
 function DashboardSkeleton() {
   return (
     <div className="animate-pulse motion-reduce:animate-none">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div className="flex items-center justify-between">
+        <div className="h-4 w-20 rounded bg-paper-dim" />
+        <div className="h-8 w-44 rounded-md bg-paper-dim" />
+      </div>
+      <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-3">
         {[0, 1, 2].map((card) => (
           <div
             key={card}
@@ -79,6 +83,7 @@ interface SummaryCardProps {
   label: string;
   amount: number;
   tone: "income" | "expense" | "positive" | "negative";
+  caption?: string;
 }
 
 const SUMMARY_TONE_CLASS: Record<SummaryCardProps["tone"], string> = {
@@ -88,7 +93,7 @@ const SUMMARY_TONE_CLASS: Record<SummaryCardProps["tone"], string> = {
   negative: "text-rust",
 };
 
-function SummaryCard({ label, amount, tone }: SummaryCardProps) {
+function SummaryCard({ label, amount, tone, caption }: SummaryCardProps) {
   return (
     <div className="rounded-lg border border-line bg-white p-5">
       <p className="font-body text-xs font-medium uppercase tracking-wide text-ink-soft">
@@ -99,6 +104,55 @@ function SummaryCard({ label, amount, tone }: SummaryCardProps) {
       >
         {amountFormatter.format(amount)}
       </p>
+      {caption && (
+        <p
+          className={`mt-1 font-body text-xs ${tone === "negative" ? "text-rust" : "text-ink-soft"}`}
+        >
+          {caption}
+        </p>
+      )}
+    </div>
+  );
+}
+
+type SummaryPeriod = "month" | "all";
+
+const PERIOD_OPTIONS: { value: SummaryPeriod; label: string }[] = [
+  { value: "month", label: "This Month" },
+  { value: "all", label: "All Time" },
+];
+
+function PeriodToggle({
+  value,
+  onChange,
+}: {
+  value: SummaryPeriod;
+  onChange: (value: SummaryPeriod) => void;
+}) {
+  return (
+    <div
+      role="group"
+      aria-label="Summary period"
+      className="inline-flex rounded-md border border-line bg-paper-dim p-1"
+    >
+      {PERIOD_OPTIONS.map((option) => {
+        const active = option.value === value;
+        return (
+          <button
+            key={option.value}
+            type="button"
+            aria-pressed={active}
+            onClick={() => onChange(option.value)}
+            className={`touch-manipulation rounded px-3 py-1.5 font-body text-sm font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ledger ${
+              active
+                ? "bg-white text-ink shadow-sm"
+                : "text-ink-soft hover:text-ink"
+            }`}
+          >
+            {option.label}
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -314,20 +368,44 @@ function InsightsSection({ insights }: { insights: Insight[] }) {
 
 function Dashboard() {
   const { transactions, loading, error } = useTransactions();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const summaryPeriod: SummaryPeriod =
+    searchParams.get("summary") === "all" ? "all" : "month";
+  function setSummaryPeriod(period: SummaryPeriod) {
+    setSearchParams(
+      (params) => {
+        if (period === "month") {
+          params.delete("summary");
+        } else {
+          params.set("summary", period);
+        }
+        return params;
+      },
+      { replace: true },
+    );
+  }
 
   const currentMonthTransactions = useMemo(
     () => filterByMonth(transactions, currentMonthKey()),
     [transactions],
   );
+  const summaryTransactions =
+    summaryPeriod === "month" ? currentMonthTransactions : transactions;
   const totalIncome = useMemo(
-    () => sumByType(currentMonthTransactions, "income"),
-    [currentMonthTransactions],
+    () => sumByType(summaryTransactions, "income"),
+    [summaryTransactions],
   );
   const totalExpenses = useMemo(
-    () => sumByType(currentMonthTransactions, "expense"),
-    [currentMonthTransactions],
+    () => sumByType(summaryTransactions, "expense"),
+    [summaryTransactions],
   );
-  const netSavings = totalIncome - totalExpenses;
+  const balance = totalIncome - totalExpenses;
+  const balanceCaption =
+    balance > 0
+      ? "You’re saving"
+      : balance < 0
+        ? "Spending more than you earn"
+        : "Breaking even";
   const categoryTotals = useMemo(
     () => groupExpensesByCategory(currentMonthTransactions),
     [currentMonthTransactions],
@@ -368,21 +446,28 @@ function Dashboard() {
 
       {!error && !loading && transactions.length > 0 && (
         <>
-          <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
+            <h2 className="font-display text-base font-semibold text-ink">
+              Summary
+            </h2>
+            <PeriodToggle value={summaryPeriod} onChange={setSummaryPeriod} />
+          </div>
+
+          <div
+            aria-live="polite"
+            className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-3"
+          >
+            <SummaryCard label="Income" amount={totalIncome} tone="income" />
             <SummaryCard
-              label="Income this month"
-              amount={totalIncome}
-              tone="income"
-            />
-            <SummaryCard
-              label="Expenses this month"
+              label="Expenses"
               amount={totalExpenses}
               tone="expense"
             />
             <SummaryCard
-              label="Net savings"
-              amount={netSavings}
-              tone={netSavings >= 0 ? "positive" : "negative"}
+              label="Balance"
+              amount={balance}
+              tone={balance >= 0 ? "positive" : "negative"}
+              caption={balanceCaption}
             />
           </div>
 
