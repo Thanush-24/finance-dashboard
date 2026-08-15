@@ -3,16 +3,7 @@ import { AlertCircle, Loader2 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../hooks/useAuth";
 import type { Transaction } from "../hooks/useTransactions";
-
-const CATEGORIES = [
-  "Food",
-  "Transport",
-  "Rent",
-  "Utilities",
-  "Entertainment",
-  "Salary",
-  "Other",
-] as const;
+import { CATEGORIES } from "../lib/categories";
 
 const inputClass =
   "w-full rounded-md border border-line bg-paper px-3 py-2 font-body text-sm text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ledger";
