@@ -2,20 +2,9 @@ import { useRef, useState } from "react";
 import { AlertCircle, Pencil, Trash2 } from "lucide-react";
 import { useTransactions, type Transaction } from "../hooks/useTransactions";
 import { supabase } from "../lib/supabase";
+import { dateFormatter, amountFormatter } from "../lib/formatters";
 import TransactionForm from "../components/TransactionForm";
 import ConfirmDeleteDialog from "../components/ConfirmDeleteDialog";
-
-const dateFormatter = new Intl.DateTimeFormat("en-IN", {
-  day: "numeric",
-  month: "short",
-  year: "numeric",
-});
-
-const amountFormatter = new Intl.NumberFormat("en-IN", {
-  style: "currency",
-  currency: "INR",
-  minimumFractionDigits: 2,
-});
 
 function formatAmount(transaction: Transaction) {
   const formatted = amountFormatter.format(transaction.amount);

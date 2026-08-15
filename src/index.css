@@ -11,6 +11,15 @@
   --color-rust: #9c4221;
   --color-line: #d9dcd3;
 
+  /* Categorical chart palette — distinct from the semantic income/expense/
+     alert colors above, so a chart category is never mistaken for one of
+     those meanings. */
+  --color-chart-brass: #96773f;
+  --color-chart-denim: #3d5b78;
+  --color-chart-plum: #6b3f4e;
+  --color-chart-olive: #5c6b3d;
+  --color-chart-clay: #7a4a2f;
+
   --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
   --font-body: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace;
