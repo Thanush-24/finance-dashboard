@@ -4,6 +4,7 @@ import { supabase } from "../lib/supabase";
 import { useAuth } from "../hooks/useAuth";
 import type { Transaction } from "../hooks/useTransactions";
 import { CATEGORIES } from "../lib/categories";
+import { todayISODate } from "../lib/formatters";
 
 const inputClass =
   "w-full rounded-md border border-input-border bg-input-bg px-3 py-2 font-body text-sm text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ledger";
@@ -13,12 +14,6 @@ const invalidInputClass = "border-rust/60";
 const labelClass = "mb-1.5 block font-body text-sm font-medium text-ink";
 
 const fieldErrorClass = "mt-1 font-body text-xs text-rust";
-
-function todayISODate() {
-  const now = new Date();
-  const offset = now.getTimezoneOffset();
-  return new Date(now.getTime() - offset * 60000).toISOString().slice(0, 10);
-}
 
 interface FieldErrors {
   amount?: string;
@@ -54,6 +49,7 @@ function TransactionForm({
     editingTransaction?.description ?? "",
   );
   const [date, setDate] = useState(editingTransaction?.date ?? todayISODate);
+  const [isRecurring, setIsRecurring] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -124,9 +120,12 @@ function TransactionForm({
           .from("transactions")
           .update(payload)
           .eq("id", editingTransaction.id)
-      : await supabase
-          .from("transactions")
-          .insert({ ...payload, user_id: session.user.id });
+      : await supabase.from("transactions").insert({
+          ...payload,
+          user_id: session.user.id,
+          is_recurring: isRecurring,
+          recurring_parent_id: null,
+        });
     setLoading(false);
 
     if (saveError) {
@@ -152,6 +151,7 @@ function TransactionForm({
     setCategory("");
     setDescription("");
     setDate(todayISODate());
+    setIsRecurring(false);
     setFieldErrors({});
     amountRef.current?.focus();
 
@@ -315,6 +315,30 @@ function TransactionForm({
             className={inputClass}
           />
         </div>
+
+        {!isEditing && (
+          <label className="mt-4 flex cursor-pointer touch-manipulation items-start gap-2 rounded-sm has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-ledger">
+            <input
+              type="checkbox"
+              name="isRecurring"
+              checked={isRecurring}
+              onChange={(event) => setIsRecurring(event.target.checked)}
+              className="mt-0.5 h-4 w-4 shrink-0 accent-ledger"
+            />
+            <span className="font-body text-sm text-ink">
+              Repeats monthly
+              <span className="block font-normal text-ink-soft">
+                Automatically added again each month (e.g. rent, subscriptions)
+              </span>
+            </span>
+          </label>
+        )}
+
+        {isEditing && editingTransaction.is_recurring && (
+          <p className="mt-4 font-body text-xs text-ink-soft">
+            Part of a monthly recurring series.
+          </p>
+        )}
 
         <div className="mt-5 flex gap-2">
           <button

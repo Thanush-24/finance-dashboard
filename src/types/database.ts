@@ -14,6 +14,8 @@ export type Database = {
           description: string | null;
           date: string;
           created_at: string;
+          is_recurring: boolean;
+          recurring_parent_id: string | null;
         };
         Insert: {
           id?: string;
@@ -24,6 +26,8 @@ export type Database = {
           description?: string | null;
           date?: string;
           created_at?: string;
+          is_recurring?: boolean;
+          recurring_parent_id?: string | null;
         };
         Update: {
           id?: string;
@@ -34,6 +38,8 @@ export type Database = {
           description?: string | null;
           date?: string;
           created_at?: string;
+          is_recurring?: boolean;
+          recurring_parent_id?: string | null;
         };
         Relationships: [];
       };
@@ -57,6 +63,33 @@ export type Database = {
           user_id?: string;
           category?: string;
           monthly_limit?: number;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      goals: {
+        Row: {
+          id: string;
+          user_id: string;
+          name: string;
+          target_amount: number;
+          target_date: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          name: string;
+          target_amount: number;
+          target_date: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          name?: string;
+          target_amount?: number;
+          target_date?: string;
           created_at?: string;
         };
         Relationships: [];

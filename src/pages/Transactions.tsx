@@ -1,8 +1,14 @@
 import { useRef, useState } from "react";
-import { AlertCircle, Pencil, Trash2 } from "lucide-react";
+import { Link } from "react-router-dom";
+import { AlertCircle, Pencil, Repeat, Trash2 } from "lucide-react";
 import { useTransactions, type Transaction } from "../hooks/useTransactions";
 import { supabase } from "../lib/supabase";
-import { dateFormatter, amountFormatter } from "../lib/formatters";
+import {
+  dateFormatter,
+  amountFormatter,
+  todayISODate,
+} from "../lib/formatters";
+import { transactionsToCsv, downloadCsv } from "../lib/exportTransactions";
 import TransactionForm from "../components/TransactionForm";
 import ConfirmDeleteDialog from "../components/ConfirmDeleteDialog";
 
@@ -152,7 +158,16 @@ function TransactionsTable({
                   )}
                 </td>
                 <td className="break-words py-3 pr-4 font-body text-sm text-ink">
-                  {transaction.category}
+                  <span className="inline-flex items-center gap-1.5">
+                    {transaction.category}
+                    {transaction.is_recurring && (
+                      <Repeat
+                        role="img"
+                        aria-label="Repeats monthly"
+                        className="h-3.5 w-3.5 shrink-0 text-ink-soft"
+                      />
+                    )}
+                  </span>
                 </td>
                 <td className="break-words py-3 pr-4 font-body text-sm text-ink-soft">
                   {transaction.description || (
@@ -248,19 +263,45 @@ function Transactions() {
     refetch();
   }
 
+  function handleExportCsv() {
+    const csv = transactionsToCsv(transactions);
+    downloadCsv(`transactions-${todayISODate()}.csv`, csv);
+  }
+
   return (
     <div>
       <div inert={!!deletingTransaction || undefined}>
-        <h1 className="font-display text-2xl font-semibold text-ink">
-          Transactions
-        </h1>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h1 className="font-display text-2xl font-semibold text-ink">
+              Transactions
+            </h1>
+            {!loading && !error && (
+              <p className="mt-1 font-body text-sm text-ink-soft">
+                {transactions.length}{" "}
+                {transactions.length === 1 ? "transaction" : "transactions"}
+              </p>
+            )}
+          </div>
 
-        {!loading && !error && (
-          <p className="mt-1 font-body text-sm text-ink-soft">
-            {transactions.length}{" "}
-            {transactions.length === 1 ? "transaction" : "transactions"}
-          </p>
-        )}
+          {!loading && !error && transactions.length > 0 && (
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={handleExportCsv}
+                className="touch-manipulation rounded-md border border-line px-3 py-2 font-body text-sm font-medium text-ink-soft transition-colors hover:bg-paper-dim hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ledger"
+              >
+                Export CSV
+              </button>
+              <Link
+                to="/report"
+                className="touch-manipulation rounded-md border border-line px-3 py-2 font-body text-sm font-medium text-ink-soft transition-colors hover:bg-paper-dim hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ledger"
+              >
+                Monthly report
+              </Link>
+            </div>
+          )}
+        </div>
 
         <div className="mt-6">
           <TransactionForm

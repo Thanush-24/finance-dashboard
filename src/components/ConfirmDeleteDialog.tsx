@@ -3,6 +3,7 @@ import { AlertCircle, Loader2 } from "lucide-react";
 import { useDialogA11y } from "../hooks/useDialogA11y";
 
 interface ConfirmDeleteDialogProps {
+  title?: string;
   description: string;
   deleting: boolean;
   error: string | null;
@@ -12,6 +13,7 @@ interface ConfirmDeleteDialogProps {
 }
 
 function ConfirmDeleteDialog({
+  title = "Delete transaction?",
   description,
   deleting,
   error,
@@ -49,7 +51,7 @@ function ConfirmDeleteDialog({
           id="confirm-delete-title"
           className="font-display text-base font-semibold text-ink"
         >
-          Delete transaction?
+          {title}
         </h2>
         <p
           id="confirm-delete-description"

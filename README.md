@@ -9,11 +9,19 @@ per-category monthly budgets, and see spending trends at a glance.
   routes, session persistence across refresh
 - **Transactions** — add, edit, and delete income/expense entries, scoped
   to the logged-in user
-- **Analytics dashboard** — monthly income/expense/net savings summary,
-  an expense-by-category pie chart, a 6-month income vs. expense trend
-  line, and computed plain-language insights
+- **Analytics dashboard** — income/expense/balance summary (This Month or
+  All Time), an expense-by-category pie chart, a 6-month income vs.
+  expense trend line, a stacked bar chart of category spend over time,
+  and computed plain-language insights
 - **Budgets** — set a monthly limit per category, track actual spend
   against it with a progress bar, clear over-budget indicator
+- **Recurring transactions** — mark a transaction as monthly (rent,
+  subscriptions) and it auto-logs itself each month, backfilling any
+  months missed since the last time the app was opened
+- **Savings goals** — set a target amount and date, tracked with a
+  progress bar against your overall balance
+- **Export** — download transaction history as CSV, or a printable
+  monthly report (print-to-PDF)
 - Every table in Postgres has row-level security scoped to `user_id` —
   one user can never read or write another user's data, enforced at the
   database layer, not just hidden in the UI
@@ -38,8 +46,9 @@ npm run dev
 ```
 
 The database schema (tables, RLS policies, grants) lives in
-[`supabase/2b_schema.sql`](supabase/2b_schema.sql) — run it in your
-Supabase project's SQL Editor before using the app.
+[`supabase/2b_schema.sql`](supabase/2b_schema.sql) and
+[`supabase/4_goals_and_recurring.sql`](supabase/4_goals_and_recurring.sql)
+— run both in your Supabase project's SQL Editor before using the app.
 
 ## Scripts
 

@@ -10,6 +10,8 @@ import {
   ResponsiveContainer,
   LineChart,
   Line,
+  BarChart,
+  Bar,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -21,9 +23,11 @@ import {
   sumByType,
   groupExpensesByCategory,
   getLastNMonthsSeries,
+  getCategoryTrendSeries,
   computeInsights,
   type CategoryTotal,
   type MonthSeriesPoint,
+  type CategoryTrendSeries,
   type Insight,
 } from "../lib/dashboardAnalytics";
 import { amountFormatter, compactAmountFormatter } from "../lib/formatters";
@@ -172,8 +176,6 @@ function ExpensePieChart({ data }: { data: CategoryTotal[] }) {
         Expenses by category
       </h2>
       <p className="mt-1 font-body text-sm text-ink-soft">This month</p>
-
-      <ChartPatternDefs />
 
       {data.length === 0 ? (
         <p className="mt-6 py-14 text-center font-body text-sm text-ink-soft">
@@ -345,6 +347,96 @@ function TrendLineChart({ data }: { data: MonthSeriesPoint[] }) {
   );
 }
 
+function CategoryTrendChart({ data }: { data: CategoryTrendSeries }) {
+  return (
+    <div className="mt-6 rounded-lg border border-line bg-card p-5">
+      <h2 className="font-display text-base font-semibold text-ink">
+        Spending by category over time
+      </h2>
+      <p className="mt-1 font-body text-sm text-ink-soft">Last 6 months</p>
+
+      {data.categories.length === 0 ? (
+        <p className="mt-6 py-14 text-center font-body text-sm text-ink-soft">
+          No expenses recorded yet.
+        </p>
+      ) : (
+        <div className="mt-4 h-80">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              data={data.points}
+              margin={{ top: 8, right: 8, left: 0, bottom: 8 }}
+            >
+              <CartesianGrid
+                stroke="var(--color-line)"
+                strokeDasharray="3 3"
+                vertical={false}
+              />
+              <XAxis
+                dataKey="label"
+                tick={{
+                  fill: "var(--color-ink-soft)",
+                  fontSize: 12,
+                  fontFamily: "var(--font-body)",
+                }}
+                axisLine={{ stroke: "var(--color-line)" }}
+                tickLine={false}
+              />
+              <YAxis
+                tickFormatter={(value: number) =>
+                  compactAmountFormatter.format(value)
+                }
+                tick={{
+                  fill: "var(--color-ink-soft)",
+                  fontSize: 12,
+                  fontFamily: "var(--font-mono)",
+                }}
+                axisLine={false}
+                tickLine={false}
+                width={56}
+              />
+              <Tooltip
+                formatter={(value) =>
+                  amountFormatter.format(
+                    typeof value === "number" ? value : Number(value),
+                  )
+                }
+                contentStyle={{
+                  fontFamily: "var(--font-body)",
+                  fontSize: 13,
+                  backgroundColor: "var(--color-card)",
+                  borderColor: "var(--color-line)",
+                  color: "var(--color-ink)",
+                }}
+                labelStyle={{ color: "var(--color-ink)" }}
+                itemStyle={{
+                  fontFamily: "var(--font-mono)",
+                  fontVariantNumeric: "tabular-nums",
+                  color: "var(--color-ink)",
+                }}
+              />
+              <Legend
+                formatter={(value: string) => (
+                  <span className="font-body text-sm text-ink">{value}</span>
+                )}
+              />
+              {data.categories.map((category, index) => (
+                <Bar
+                  key={category}
+                  dataKey={category}
+                  name={category}
+                  stackId="expenses"
+                  isAnimationActive={false}
+                  fill={`url(#${getCategoryStyle(index).patternId})`}
+                />
+              ))}
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function InsightsSection({ insights }: { insights: Insight[] }) {
   if (insights.length === 0) return null;
 
@@ -419,6 +511,10 @@ function Dashboard() {
     () => getLastNMonthsSeries(transactions, 6),
     [transactions],
   );
+  const categoryTrend = useMemo(
+    () => getCategoryTrendSeries(transactions, 6),
+    [transactions],
+  );
   const insights = useMemo(() => computeInsights(transactions), [transactions]);
 
   return (
@@ -476,10 +572,14 @@ function Dashboard() {
             />
           </div>
 
+          <ChartPatternDefs />
+
           <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
             <ExpensePieChart data={categoryTotals} />
             <TrendLineChart data={monthSeries} />
           </div>
+
+          <CategoryTrendChart data={categoryTrend} />
 
           <InsightsSection insights={insights} />
         </>

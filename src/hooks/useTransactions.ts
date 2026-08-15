@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from "react";
 import type { PostgrestError } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
 import type { Database } from "../types/database";
+import { useAuth } from "./useAuth";
+import { backfillRecurringTransactions } from "../lib/recurringTransactions";
 
 export type Transaction = Database["public"]["Tables"]["transactions"]["Row"];
 
@@ -13,6 +15,8 @@ interface UseTransactionsResult {
 }
 
 export function useTransactions(): UseTransactionsResult {
+  const { session } = useAuth();
+  const userId = session?.user.id;
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<PostgrestError | null>(null);
@@ -25,27 +29,48 @@ export function useTransactions(): UseTransactionsResult {
   useEffect(() => {
     let cancelled = false;
 
-    supabase
-      .from("transactions")
-      .select("*")
-      .order("date", { ascending: false })
-      .order("created_at", { ascending: false })
-      .then(({ data, error: fetchError }) => {
-        if (cancelled) return;
-        if (fetchError) {
-          console.error("[transactions] fetch failed:", fetchError);
-          setError(fetchError);
-        } else {
-          setError(null);
-          setTransactions(data ?? []);
-        }
+    async function load() {
+      const { data, error: fetchError } = await supabase
+        .from("transactions")
+        .select("*")
+        .order("date", { ascending: false })
+        .order("created_at", { ascending: false });
+
+      if (cancelled) return;
+
+      if (fetchError) {
+        console.error("[transactions] fetch failed:", fetchError);
+        setError(fetchError);
         setLoading(false);
-      });
+        return;
+      }
+
+      let rows = data ?? [];
+
+      if (userId) {
+        const inserted = await backfillRecurringTransactions(rows, userId);
+        if (inserted && !cancelled) {
+          const { data: refreshed, error: refetchError } = await supabase
+            .from("transactions")
+            .select("*")
+            .order("date", { ascending: false })
+            .order("created_at", { ascending: false });
+          if (!refetchError && refreshed) rows = refreshed;
+        }
+      }
+
+      if (cancelled) return;
+      setError(null);
+      setTransactions(rows);
+      setLoading(false);
+    }
+
+    load();
 
     return () => {
       cancelled = true;
     };
-  }, [refetchToken]);
+  }, [refetchToken, userId]);
 
   return { transactions, loading, error, refetch };
 }

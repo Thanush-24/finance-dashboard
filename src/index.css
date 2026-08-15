@@ -52,3 +52,21 @@
     @apply bg-paper text-ink font-body antialiased;
   }
 }
+
+/* Printed reports use the app's own tokens (bg-paper, text-ink, etc.) so
+   the component markup needs no print-specific classes — only the token
+   values change, scoped to .print-report so the rest of the app's dark
+   theme is unaffected. */
+@media print {
+  .print-report {
+    color-scheme: light;
+    --color-paper: #ffffff;
+    --color-paper-dim: #f3f4f6;
+    --color-card: #ffffff;
+    --color-ink: #111827;
+    --color-ink-soft: #4b5563;
+    --color-line: #d1d5db;
+    --color-ledger: #166534;
+    --color-rust: #991b1b;
+  }
+}

@@ -5,6 +5,7 @@ import {
   LayoutDashboard,
   ArrowLeftRight,
   PiggyBank,
+  Target,
   LogOut,
   Loader2,
 } from "lucide-react";
@@ -14,6 +15,7 @@ const navItems = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/transactions", label: "Transactions", icon: ArrowLeftRight },
   { to: "/budgets", label: "Budgets", icon: PiggyBank },
+  { to: "/goals", label: "Goals", icon: Target },
 ];
 
 interface SidebarProps {

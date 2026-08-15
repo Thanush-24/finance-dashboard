@@ -86,6 +86,42 @@ export function getLastNMonthsSeries(
   return points;
 }
 
+export interface CategoryTrendPoint {
+  label: string;
+  [category: string]: number | string;
+}
+
+export interface CategoryTrendSeries {
+  points: CategoryTrendPoint[];
+  categories: string[];
+}
+
+export function getCategoryTrendSeries(
+  transactions: Transaction[],
+  n: number,
+): CategoryTrendSeries {
+  const current = currentMonthKey();
+  const points: CategoryTrendPoint[] = [];
+  const categorySet = new Set<string>();
+
+  for (let i = n - 1; i >= 0; i--) {
+    const key = monthKeyOffset(current, -i);
+    const monthTransactions = filterByMonth(transactions, key);
+    const point: CategoryTrendPoint = {
+      label: monthLabelFormatter.format(new Date(key.year, key.month, 1)),
+    };
+    for (const { category, total } of groupExpensesByCategory(
+      monthTransactions,
+    )) {
+      point[category] = total;
+      categorySet.add(category);
+    }
+    points.push(point);
+  }
+
+  return { points, categories: Array.from(categorySet).sort() };
+}
+
 function daysInMonth(key: MonthKey): number {
   return new Date(key.year, key.month + 1, 0).getDate();
 }
