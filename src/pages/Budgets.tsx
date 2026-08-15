@@ -8,6 +8,7 @@ import {
   filterByMonth,
   groupExpensesByCategory,
 } from "../lib/dashboardAnalytics";
+import { CATEGORIES } from "../lib/categories";
 import { amountFormatter } from "../lib/formatters";
 import { supabase } from "../lib/supabase";
 import BudgetForm from "../components/BudgetForm";
@@ -158,6 +159,18 @@ function Budgets() {
     return totals;
   }, [transactions]);
 
+  // Suggestions merge the fixed starter list with whatever categories the
+  // user has actually logged transactions under, so a custom category
+  // typed on the Transactions page (e.g. "Pet Supplies") is immediately
+  // budgetable too, not just the 7 defaults.
+  const categorySuggestions = useMemo(() => {
+    const merged = new Set([
+      ...CATEGORIES,
+      ...transactions.map((t) => t.category),
+    ]);
+    return Array.from(merged).sort((a, b) => a.localeCompare(b));
+  }, [transactions]);
+
   function handleEdit(budget: Budget) {
     setEditingId(budget.id);
   }
@@ -255,6 +268,7 @@ function Budgets() {
           <BudgetForm
             key={editingId ?? "new"}
             editingBudget={editingBudget}
+            categorySuggestions={categorySuggestions}
             onSaved={() => {
               setEditingId(null);
               refetch();

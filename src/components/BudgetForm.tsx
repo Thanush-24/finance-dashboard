@@ -3,7 +3,6 @@ import { AlertCircle, Loader2 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../hooks/useAuth";
 import type { Budget } from "../hooks/useBudgets";
-import { CATEGORIES } from "../lib/categories";
 
 const inputClass =
   "w-full rounded-md border border-input-border bg-input-bg px-3 py-2 font-body text-sm text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ledger";
@@ -21,6 +20,7 @@ interface FieldErrors {
 
 interface BudgetFormProps {
   editingBudget: Budget | null;
+  categorySuggestions: string[];
   onSaved: () => void;
   onCancelEdit: () => void;
 }
@@ -28,7 +28,12 @@ interface BudgetFormProps {
 // Mounts fresh on every switch between create mode and editing a specific
 // budget (parent renders with key={editingBudget?.id ?? "new"}), so local
 // state can just initialize from the prop instead of syncing via an effect.
-function BudgetForm({ editingBudget, onSaved, onCancelEdit }: BudgetFormProps) {
+function BudgetForm({
+  editingBudget,
+  categorySuggestions,
+  onSaved,
+  onCancelEdit,
+}: BudgetFormProps) {
   const isEditing = editingBudget !== null;
   const { session } = useAuth();
   const [category, setCategory] = useState(editingBudget?.category ?? "");
@@ -40,7 +45,7 @@ function BudgetForm({ editingBudget, onSaved, onCancelEdit }: BudgetFormProps) {
   const [loading, setLoading] = useState(false);
 
   const formRef = useRef<HTMLDivElement>(null);
-  const categoryRef = useRef<HTMLSelectElement>(null);
+  const categoryRef = useRef<HTMLInputElement>(null);
   const monthlyLimitRef = useRef<HTMLInputElement>(null);
   const errorRef = useRef<HTMLDivElement>(null);
 
@@ -64,8 +69,8 @@ function BudgetForm({ editingBudget, onSaved, onCancelEdit }: BudgetFormProps) {
 
     const parsedLimit = Number(monthlyLimit);
     const nextFieldErrors: FieldErrors = {};
-    if (!category) {
-      nextFieldErrors.category = "Select a category.";
+    if (!category.trim()) {
+      nextFieldErrors.category = "Enter a category.";
     }
     if (!monthlyLimit || Number.isNaN(parsedLimit) || parsedLimit <= 0) {
       nextFieldErrors.monthlyLimit = "Enter a limit greater than 0.";
@@ -87,7 +92,7 @@ function BudgetForm({ editingBudget, onSaved, onCancelEdit }: BudgetFormProps) {
     const { error: saveError } = await supabase.from("budgets").upsert(
       {
         user_id: session.user.id,
-        category,
+        category: category.trim(),
         monthly_limit: parsedLimit,
       },
       { onConflict: "user_id,category" },
@@ -145,10 +150,12 @@ function BudgetForm({ editingBudget, onSaved, onCancelEdit }: BudgetFormProps) {
             <label htmlFor="budget-category" className={labelClass}>
               Category
             </label>
-            <select
+            <input
               ref={categoryRef}
               id="budget-category"
               name="category"
+              type="text"
+              list="budget-category-suggestions"
               autoComplete="off"
               disabled={isEditing}
               aria-invalid={!!fieldErrors.category}
@@ -157,19 +164,16 @@ function BudgetForm({ editingBudget, onSaved, onCancelEdit }: BudgetFormProps) {
               }
               value={category}
               onChange={(event) => setCategory(event.target.value)}
+              placeholder="Food…"
               className={`${inputClass} ${fieldErrors.category ? invalidInputClass : ""} ${
                 isEditing ? "cursor-not-allowed opacity-70" : ""
               }`}
-            >
-              <option value="" disabled>
-                Select a category
-              </option>
-              {CATEGORIES.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
+            />
+            <datalist id="budget-category-suggestions">
+              {categorySuggestions.map((option) => (
+                <option key={option} value={option} />
               ))}
-            </select>
+            </datalist>
             {fieldErrors.category && (
               <p id="budget-category-error" className={fieldErrorClass}>
                 {fieldErrors.category}
