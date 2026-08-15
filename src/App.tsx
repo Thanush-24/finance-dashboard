@@ -5,7 +5,7 @@ function App() {
         Tailwind is working
       </h1>
     </div>
-  )
+  );
 }
 
-export default App
+export default App;
