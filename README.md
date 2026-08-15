@@ -1,32 +1,49 @@
-# React + TypeScript + Vite
+# Ledger — Personal Finance Dashboard
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+A personal finance management dashboard: track income and expenses, set
+per-category monthly budgets, and see spending trends at a glance.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **Auth** — email/password signup and login (Supabase Auth), protected
+  routes, session persistence across refresh
+- **Transactions** — add, edit, and delete income/expense entries, scoped
+  to the logged-in user
+- **Analytics dashboard** — monthly income/expense/net savings summary,
+  an expense-by-category pie chart, a 6-month income vs. expense trend
+  line, and computed plain-language insights
+- **Budgets** — set a monthly limit per category, track actual spend
+  against it with a progress bar, clear over-budget indicator
+- Every table in Postgres has row-level security scoped to `user_id` —
+  one user can never read or write another user's data, enforced at the
+  database layer, not just hidden in the UI
 
-## React Compiler
+## Tech stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+| Layer               | Choice                                                       |
+| ------------------- | ------------------------------------------------------------ |
+| Frontend            | React + Vite + TypeScript + Tailwind CSS                     |
+| Routing             | react-router-dom                                             |
+| Charts              | Recharts                                                     |
+| Icons               | lucide-react                                                 |
+| Backend + DB + Auth | Supabase (Postgres, email/password auth, row-level security) |
+| Deployment          | Vercel (frontend) + Supabase (backend)                       |
 
-## Expanding the Oxlint configuration
+## Running locally
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+npm install
+cp .env.example .env   # fill in your Supabase project URL + anon key
+npm run dev
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+The database schema (tables, RLS policies, grants) lives in
+[`supabase/2b_schema.sql`](supabase/2b_schema.sql) — run it in your
+Supabase project's SQL Editor before using the app.
+
+## Scripts
+
+- `npm run dev` — start the dev server
+- `npm run build` — typecheck (`tsc -b`) and build for production
+- `npm run lint` — ESLint
+- `npm run format` — Prettier
