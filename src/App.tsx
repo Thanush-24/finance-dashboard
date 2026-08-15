@@ -8,28 +8,24 @@ import Dashboard from "./pages/Dashboard";
 import Transactions from "./pages/Transactions";
 import Budgets from "./pages/Budgets";
 
-// TEMPORARY — verification only, remove once the Supabase connection is
-// confirmed working. Queries a table that doesn't exist yet: a PostgREST
-// "table not in schema cache" error (PGRST205) means we reached the right
-// project with valid credentials (schema comes in phase 2b). Any other
-// outcome means the URL, key, or network path is actually broken.
+// TEMPORARY — verification only, remove once auth lands in phase 2c.
+// Queries the real transactions table with no session: RLS is scoped
+// `to authenticated`, so an anon request matches zero policies and gets
+// back an empty array (not an error) rather than every user's rows. An
+// actual error here means the schema, RLS, or credentials are broken.
 function useSupabaseConnectionCheck() {
   useEffect(() => {
     supabase
-      .from("_connection_check_")
+      .from("transactions")
       .select("*")
-      .limit(1)
-      .then(({ error }) => {
-        if (!error) {
-          console.log(
-            "[supabase] connection check succeeded (unexpected: table exists)",
-          );
-        } else if (error.code === "PGRST205" || error.code === "42P01") {
-          console.log(
-            "[supabase] connection check succeeded: reached project, no schema yet (expected)",
-          );
-        } else {
+      .then(({ data, error }) => {
+        if (error) {
           console.error("[supabase] connection check failed:", error);
+        } else {
+          console.log(
+            "[supabase] connection check succeeded, RLS-empty as expected:",
+            data,
+          );
         }
       });
   }, []);
