@@ -16,6 +16,7 @@ export type Database = {
           created_at: string;
           is_recurring: boolean;
           recurring_parent_id: string | null;
+          goal_id: string | null;
         };
         Insert: {
           id?: string;
@@ -28,6 +29,7 @@ export type Database = {
           created_at?: string;
           is_recurring?: boolean;
           recurring_parent_id?: string | null;
+          goal_id?: string | null;
         };
         Update: {
           id?: string;
@@ -40,6 +42,7 @@ export type Database = {
           created_at?: string;
           is_recurring?: boolean;
           recurring_parent_id?: string | null;
+          goal_id?: string | null;
         };
         Relationships: [];
       };

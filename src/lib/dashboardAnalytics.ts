@@ -42,6 +42,21 @@ export function sumByType(
     .reduce((sum, t) => sum + t.amount, 0);
 }
 
+// A goal's progress is the sum of income transactions earmarked to it via
+// goal_id, not the account's overall balance — this lets a user save
+// toward several goals independently by choosing which goal each income
+// transaction contributes to.
+export function sumContributionsByGoal(
+  transactions: Transaction[],
+): Map<string, number> {
+  const totals = new Map<string, number>();
+  for (const t of transactions) {
+    if (t.type !== "income" || !t.goal_id) continue;
+    totals.set(t.goal_id, (totals.get(t.goal_id) ?? 0) + t.amount);
+  }
+  return totals;
+}
+
 export interface CategoryTotal {
   category: string;
   total: number;

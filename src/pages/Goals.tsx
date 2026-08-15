@@ -2,7 +2,7 @@ import { useMemo, useRef, useState } from "react";
 import { AlertCircle, Pencil, Trash2 } from "lucide-react";
 import { useGoals, type Goal } from "../hooks/useGoals";
 import { useTransactions } from "../hooks/useTransactions";
-import { sumByType } from "../lib/dashboardAnalytics";
+import { sumContributionsByGoal } from "../lib/dashboardAnalytics";
 import {
   amountFormatter,
   dateFormatter,
@@ -43,24 +43,18 @@ function GoalsEmptyState() {
 
 interface GoalRowProps {
   goal: Goal;
-  currentBalance: number;
+  contributed: number;
   onEdit: (goal: Goal) => void;
   onDeleteRequest: (goal: Goal, trigger: HTMLButtonElement) => void;
 }
 
-function GoalRow({
-  goal,
-  currentBalance,
-  onEdit,
-  onDeleteRequest,
-}: GoalRowProps) {
-  const progressAmount = Math.max(currentBalance, 0);
+function GoalRow({ goal, contributed, onEdit, onDeleteRequest }: GoalRowProps) {
   const percent =
-    goal.target_amount > 0 ? (progressAmount / goal.target_amount) * 100 : 0;
+    goal.target_amount > 0 ? (contributed / goal.target_amount) * 100 : 0;
   const barWidth = Math.min(percent, 100);
-  const isReached = currentBalance >= goal.target_amount;
+  const isReached = contributed >= goal.target_amount;
   const isOverdue = !isReached && goal.target_date < todayISODate();
-  const remaining = Math.max(goal.target_amount - currentBalance, 0);
+  const remaining = Math.max(goal.target_amount - contributed, 0);
   const targetDateLabel = dateFormatter.format(
     new Date(`${goal.target_date}T00:00:00`),
   );
@@ -97,7 +91,7 @@ function GoalRow({
             isReached ? "font-semibold text-ledger" : "font-semibold text-ink"
           }
         >
-          {amountFormatter.format(progressAmount)}
+          {amountFormatter.format(contributed)}
         </span>
         <span className="text-ink-soft">
           {" "}
@@ -148,9 +142,8 @@ function Goals() {
   const editingGoal = goals.find((g) => g.id === editingId) ?? null;
   const deletingGoal = goals.find((g) => g.id === deletingId) ?? null;
 
-  const currentBalance = useMemo(
-    () =>
-      sumByType(transactions, "income") - sumByType(transactions, "expense"),
+  const contributionsByGoal = useMemo(
+    () => sumContributionsByGoal(transactions),
     [transactions],
   );
 
@@ -196,7 +189,8 @@ function Goals() {
       <div inert={!!deletingGoal || undefined}>
         <h1 className="font-display text-2xl font-semibold text-ink">Goals</h1>
         <p className="mt-1 font-body text-sm text-ink-soft">
-          Savings targets, tracked against your overall balance
+          Savings targets — add income to a goal from the transaction form to
+          track progress
         </p>
 
         <div className="mt-6">
@@ -236,7 +230,7 @@ function Goals() {
               <GoalRow
                 key={goal.id}
                 goal={goal}
-                currentBalance={currentBalance}
+                contributed={contributionsByGoal.get(goal.id) ?? 0}
                 onEdit={handleEdit}
                 onDeleteRequest={handleDeleteRequest}
               />

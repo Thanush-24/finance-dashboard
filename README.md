@@ -18,8 +18,9 @@ per-category monthly budgets, and see spending trends at a glance.
 - **Recurring transactions** — mark a transaction as monthly (rent,
   subscriptions) and it auto-logs itself each month, backfilling any
   months missed since the last time the app was opened
-- **Savings goals** — set a target amount and date, tracked with a
-  progress bar against your overall balance
+- **Savings goals** — set a target amount and date; earmark income
+  transactions toward a specific goal to track its progress
+  independently of your other goals
 - **Export** — download transaction history as CSV, or a printable
   monthly report (print-to-PDF)
 - Every table in Postgres has row-level security scoped to `user_id` —
@@ -46,9 +47,11 @@ npm run dev
 ```
 
 The database schema (tables, RLS policies, grants) lives in
-[`supabase/2b_schema.sql`](supabase/2b_schema.sql) and
-[`supabase/4_goals_and_recurring.sql`](supabase/4_goals_and_recurring.sql)
-— run both in your Supabase project's SQL Editor before using the app.
+[`supabase/2b_schema.sql`](supabase/2b_schema.sql),
+[`supabase/4_goals_and_recurring.sql`](supabase/4_goals_and_recurring.sql),
+and
+[`supabase/5_goal_contributions.sql`](supabase/5_goal_contributions.sql)
+— run all three in your Supabase project's SQL Editor before using the app.
 
 ## Scripts
 

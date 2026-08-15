@@ -52,6 +52,7 @@ export async function backfillRecurringTransactions(
     date: string;
     is_recurring: boolean;
     recurring_parent_id: string;
+    goal_id: string | null;
   }> = [];
 
   for (const template of templates) {
@@ -75,6 +76,7 @@ export async function backfillRecurringTransactions(
         date: monthKeyToDate(cursor, templateDay),
         is_recurring: true,
         recurring_parent_id: template.id,
+        goal_id: template.goal_id,
       });
       cursor = monthKeyOffset(cursor, 1);
     }

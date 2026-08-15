@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import { Link } from "react-router-dom";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../hooks/useAuth";
+import { useGoals } from "../hooks/useGoals";
 import type { Transaction } from "../hooks/useTransactions";
 import { CATEGORIES } from "../lib/categories";
 import { todayISODate } from "../lib/formatters";
@@ -38,6 +40,7 @@ function TransactionForm({
 }: TransactionFormProps) {
   const isEditing = editingTransaction !== null;
   const { session } = useAuth();
+  const { goals } = useGoals();
   const [type, setType] = useState<Transaction["type"]>(
     editingTransaction?.type ?? "expense",
   );
@@ -49,6 +52,7 @@ function TransactionForm({
     editingTransaction?.description ?? "",
   );
   const [date, setDate] = useState(editingTransaction?.date ?? todayISODate);
+  const [goalId, setGoalId] = useState(editingTransaction?.goal_id ?? "");
   const [isRecurring, setIsRecurring] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [error, setError] = useState<string | null>(null);
@@ -112,6 +116,7 @@ function TransactionForm({
       type,
       description: description.trim() || null,
       date,
+      goal_id: type === "income" && goalId ? goalId : null,
     };
 
     setLoading(true);
@@ -151,6 +156,7 @@ function TransactionForm({
     setCategory("");
     setDescription("");
     setDate(todayISODate());
+    setGoalId("");
     setIsRecurring(false);
     setFieldErrors({});
     amountRef.current?.focus();
@@ -315,6 +321,41 @@ function TransactionForm({
             className={inputClass}
           />
         </div>
+
+        {type === "income" &&
+          (goals.length > 0 ? (
+            <div className="mt-4">
+              <label htmlFor="goal" className={labelClass}>
+                Add to a goal{" "}
+                <span className="font-normal text-ink-soft">(optional)</span>
+              </label>
+              <select
+                id="goal"
+                name="goalId"
+                autoComplete="off"
+                value={goalId}
+                onChange={(event) => setGoalId(event.target.value)}
+                className={inputClass}
+              >
+                <option value="">Don&rsquo;t add to a goal</option>
+                {goals.map((goal) => (
+                  <option key={goal.id} value={goal.id}>
+                    {goal.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : (
+            <p className="mt-4 font-body text-xs text-ink-soft">
+              <Link
+                to="/goals"
+                className="touch-manipulation rounded-sm font-medium text-accent hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+              >
+                Set a savings goal
+              </Link>{" "}
+              to earmark income toward it.
+            </p>
+          ))}
 
         {!isEditing && (
           <label className="mt-4 flex cursor-pointer touch-manipulation items-start gap-2 rounded-sm has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-ledger">
