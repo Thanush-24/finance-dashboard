@@ -153,7 +153,11 @@ function ExpensePieChart({ data }: { data: CategoryTotal[] }) {
                 ))}
               </Pie>
               <Tooltip
-                formatter={(value: number) => amountFormatter.format(value)}
+                formatter={(value) =>
+                  amountFormatter.format(
+                    typeof value === "number" ? value : Number(value),
+                  )
+                }
                 contentStyle={{
                   fontFamily: "var(--font-body)",
                   fontSize: 13,
@@ -234,7 +238,11 @@ function TrendLineChart({ data }: { data: MonthSeriesPoint[] }) {
               width={56}
             />
             <Tooltip
-              formatter={(value: number) => amountFormatter.format(value)}
+              formatter={(value) =>
+                amountFormatter.format(
+                  typeof value === "number" ? value : Number(value),
+                )
+              }
               contentStyle={{
                 fontFamily: "var(--font-body)",
                 fontSize: 13,
