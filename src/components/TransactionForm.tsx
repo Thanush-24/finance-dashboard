@@ -1,12 +1,20 @@
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type FormEvent,
+} from "react";
 import { Link } from "react-router-dom";
-import { AlertCircle, Loader2 } from "lucide-react";
+import { AlertCircle, Loader2, Receipt } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../hooks/useAuth";
 import { useGoals } from "../hooks/useGoals";
 import type { Transaction } from "../hooks/useTransactions";
 import { CATEGORIES } from "../lib/categories";
 import { todayISODate } from "../lib/formatters";
+import { extractReceiptText, parseReceiptText } from "../lib/receiptOcr";
+import { uploadReceipt, getReceiptSignedUrl } from "../lib/receiptStorage";
 
 const inputClass =
   "w-full rounded-md border border-input-border bg-input-bg px-3 py-2 font-body text-sm text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ledger";
@@ -54,6 +62,12 @@ function TransactionForm({
   const [date, setDate] = useState(editingTransaction?.date ?? todayISODate);
   const [goalId, setGoalId] = useState(editingTransaction?.goal_id ?? "");
   const [isRecurring, setIsRecurring] = useState(false);
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [receiptPreviewUrl, setReceiptPreviewUrl] = useState<string | null>(
+    null,
+  );
+  const [scanning, setScanning] = useState(false);
+  const [scanError, setScanError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -63,10 +77,17 @@ function TransactionForm({
   const categoryRef = useRef<HTMLInputElement>(null);
   const dateRef = useRef<HTMLInputElement>(null);
   const errorRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (error) errorRef.current?.focus();
   }, [error]);
+
+  useEffect(() => {
+    return () => {
+      if (receiptPreviewUrl) URL.revokeObjectURL(receiptPreviewUrl);
+    };
+  }, [receiptPreviewUrl]);
 
   useEffect(() => {
     if (isEditing) {
@@ -77,6 +98,51 @@ function TransactionForm({
     // edit mode is entered or the edited row changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  async function handleFileSelect(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setScanError(null);
+    if (receiptPreviewUrl) URL.revokeObjectURL(receiptPreviewUrl);
+    setReceiptFile(file);
+    setReceiptPreviewUrl(URL.createObjectURL(file));
+
+    setScanning(true);
+    try {
+      const text = await extractReceiptText(file);
+      const parsed = parseReceiptText(text);
+      if (parsed.amount !== null) setAmount(String(parsed.amount));
+      if (parsed.date) setDate(parsed.date);
+      if (parsed.category) setCategory(parsed.category);
+      if (parsed.description) setDescription(parsed.description);
+    } catch (ocrError) {
+      console.error("[transactions] receipt OCR failed:", ocrError);
+      setScanError(
+        "Couldn’t read the bill automatically — enter the details manually.",
+      );
+    } finally {
+      setScanning(false);
+    }
+  }
+
+  function handleClearReceipt() {
+    if (receiptPreviewUrl) URL.revokeObjectURL(receiptPreviewUrl);
+    setReceiptFile(null);
+    setReceiptPreviewUrl(null);
+    setScanError(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+
+  async function handleViewReceipt() {
+    if (!editingTransaction?.receipt_path) return;
+    try {
+      const url = await getReceiptSignedUrl(editingTransaction.receipt_path);
+      window.open(url, "_blank", "noopener,noreferrer");
+    } catch (viewError) {
+      console.error("[transactions] failed to open receipt:", viewError);
+    }
+  }
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -120,6 +186,19 @@ function TransactionForm({
     };
 
     setLoading(true);
+
+    let receiptPath: string | null = null;
+    if (receiptFile && !isEditing) {
+      try {
+        receiptPath = await uploadReceipt(receiptFile, session.user.id);
+      } catch (uploadError) {
+        console.error("[transactions] receipt upload failed:", uploadError);
+        setLoading(false);
+        setError("Couldn’t upload your receipt. Try again.");
+        return;
+      }
+    }
+
     const { error: saveError } = isEditing
       ? await supabase
           .from("transactions")
@@ -130,6 +209,7 @@ function TransactionForm({
           user_id: session.user.id,
           is_recurring: isRecurring,
           recurring_parent_id: null,
+          receipt_path: receiptPath,
         });
     setLoading(false);
 
@@ -158,6 +238,7 @@ function TransactionForm({
     setDate(todayISODate());
     setGoalId("");
     setIsRecurring(false);
+    handleClearReceipt();
     setFieldErrors({});
     amountRef.current?.focus();
 
@@ -304,6 +385,90 @@ function TransactionForm({
             )}
           </div>
         </div>
+
+        {!isEditing && (
+          <fieldset className="mt-4">
+            <legend className={labelClass}>
+              Bill <span className="font-normal text-ink-soft">(optional)</span>
+            </legend>
+            <div className="flex flex-wrap items-center gap-3">
+              <input
+                ref={fileInputRef}
+                id="receipt-file"
+                name="receiptFile"
+                type="file"
+                accept="image/*"
+                className="sr-only"
+                onChange={handleFileSelect}
+              />
+              <label
+                htmlFor="receipt-file"
+                className="flex cursor-pointer touch-manipulation items-center gap-2 rounded-md border border-line px-3 py-2 font-body text-sm font-medium text-ink-soft transition-colors hover:bg-paper-dim hover:text-ink has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-ledger"
+              >
+                <Receipt className="h-4 w-4" aria-hidden="true" />
+                {receiptFile ? "Replace bill" : "Upload a bill"}
+              </label>
+
+              {receiptPreviewUrl && (
+                <div className="flex items-center gap-2">
+                  <img
+                    src={receiptPreviewUrl}
+                    alt="Uploaded bill preview"
+                    width={40}
+                    height={40}
+                    className="h-10 w-10 rounded border border-line object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleClearReceipt}
+                    className="touch-manipulation rounded-sm font-body text-xs font-medium text-ink-soft underline-offset-2 hover:text-rust hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ledger"
+                  >
+                    Remove
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {scanning && (
+              <p
+                aria-live="polite"
+                className="mt-2 font-body text-xs text-ink-soft"
+              >
+                Reading bill…
+              </p>
+            )}
+            {!scanning && receiptFile && !scanError && (
+              <p
+                aria-live="polite"
+                className="mt-2 font-body text-xs text-ledger"
+              >
+                Filled in the amount, date, and category from your bill — check
+                them before saving.
+              </p>
+            )}
+            {scanError && (
+              <p
+                aria-live="polite"
+                className="mt-2 font-body text-xs text-rust"
+              >
+                {scanError}
+              </p>
+            )}
+          </fieldset>
+        )}
+
+        {isEditing && editingTransaction.receipt_path && (
+          <p className="mt-4 font-body text-xs text-ink-soft">
+            <button
+              type="button"
+              onClick={handleViewReceipt}
+              className="inline-flex touch-manipulation items-center gap-1.5 rounded-sm font-medium text-accent hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+            >
+              <Receipt className="h-3.5 w-3.5" aria-hidden="true" />
+              View attached receipt
+            </button>
+          </p>
+        )}
 
         <div className="mt-4">
           <label htmlFor="description" className={labelClass}>

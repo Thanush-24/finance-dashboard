@@ -23,6 +23,10 @@ per-category monthly budgets, and see spending trends at a glance.
   independently of your other goals
 - **Export** — download transaction history as CSV, or a printable
   monthly report (print-to-PDF)
+- **Scan a bill** — upload a receipt image and on-device OCR
+  (Tesseract.js) pre-fills the amount, date, category, and
+  description for review before saving; the original image is stored
+  in Supabase Storage and viewable from the transaction list
 - Every table in Postgres has row-level security scoped to `user_id` —
   one user can never read or write another user's data, enforced at the
   database layer, not just hidden in the UI
@@ -49,9 +53,10 @@ npm run dev
 The database schema (tables, RLS policies, grants) lives in
 [`supabase/2b_schema.sql`](supabase/2b_schema.sql),
 [`supabase/4_goals_and_recurring.sql`](supabase/4_goals_and_recurring.sql),
+[`supabase/5_goal_contributions.sql`](supabase/5_goal_contributions.sql),
 and
-[`supabase/5_goal_contributions.sql`](supabase/5_goal_contributions.sql)
-— run all three in your Supabase project's SQL Editor before using the app.
+[`supabase/6_receipts.sql`](supabase/6_receipts.sql)
+— run all four in your Supabase project's SQL Editor before using the app.
 
 ## Scripts
 

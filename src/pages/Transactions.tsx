@@ -1,6 +1,13 @@
 import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { AlertCircle, Pencil, Repeat, RotateCcw, Trash2 } from "lucide-react";
+import {
+  AlertCircle,
+  Pencil,
+  Receipt as ReceiptIcon,
+  Repeat,
+  RotateCcw,
+  Trash2,
+} from "lucide-react";
 import { useTransactions, type Transaction } from "../hooks/useTransactions";
 import { useAuth } from "../hooks/useAuth";
 import { supabase } from "../lib/supabase";
@@ -10,6 +17,7 @@ import {
   todayISODate,
 } from "../lib/formatters";
 import { transactionsToCsv, downloadCsv } from "../lib/exportTransactions";
+import { getReceiptSignedUrl } from "../lib/receiptStorage";
 import TransactionForm from "../components/TransactionForm";
 import ConfirmDeleteDialog from "../components/ConfirmDeleteDialog";
 import ResetConfirmDialog from "../components/ResetConfirmDialog";
@@ -94,6 +102,7 @@ interface TransactionsTableProps {
     transaction: Transaction,
     trigger: HTMLButtonElement,
   ) => void;
+  onViewReceipt: (transaction: Transaction) => void;
 }
 
 function TransactionsTable({
@@ -101,6 +110,7 @@ function TransactionsTable({
   editingId,
   onEdit,
   onDeleteRequest,
+  onViewReceipt,
 }: TransactionsTableProps) {
   return (
     <div className="overflow-x-auto">
@@ -185,6 +195,16 @@ function TransactionsTable({
                 </td>
                 <td className="py-3 pl-4">
                   <div className="flex justify-end gap-1">
+                    {transaction.receipt_path && (
+                      <button
+                        type="button"
+                        onClick={() => onViewReceipt(transaction)}
+                        aria-label={`View receipt for ${summary} transaction`}
+                        className="touch-manipulation rounded-md p-1.5 text-ink-soft transition-colors hover:bg-paper-dim hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ledger"
+                      >
+                        <ReceiptIcon className="h-4 w-4" aria-hidden="true" />
+                      </button>
+                    )}
                     <button
                       type="button"
                       onClick={() => onEdit(transaction)}
@@ -273,6 +293,16 @@ function Transactions() {
   function handleExportCsv() {
     const csv = transactionsToCsv(transactions);
     downloadCsv(`transactions-${todayISODate()}.csv`, csv);
+  }
+
+  async function handleViewReceipt(transaction: Transaction) {
+    if (!transaction.receipt_path) return;
+    try {
+      const url = await getReceiptSignedUrl(transaction.receipt_path);
+      window.open(url, "_blank", "noopener,noreferrer");
+    } catch (viewError) {
+      console.error("[transactions] failed to open receipt:", viewError);
+    }
   }
 
   function handleResetRequest(trigger: HTMLButtonElement) {
@@ -387,6 +417,7 @@ function Transactions() {
               editingId={editingId}
               onEdit={handleEdit}
               onDeleteRequest={handleDeleteRequest}
+              onViewReceipt={handleViewReceipt}
             />
           )}
         </div>

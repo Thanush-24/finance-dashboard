@@ -17,6 +17,7 @@ export type Database = {
           is_recurring: boolean;
           recurring_parent_id: string | null;
           goal_id: string | null;
+          receipt_path: string | null;
         };
         Insert: {
           id?: string;
@@ -30,6 +31,7 @@ export type Database = {
           is_recurring?: boolean;
           recurring_parent_id?: string | null;
           goal_id?: string | null;
+          receipt_path?: string | null;
         };
         Update: {
           id?: string;
@@ -43,6 +45,7 @@ export type Database = {
           is_recurring?: boolean;
           recurring_parent_id?: string | null;
           goal_id?: string | null;
+          receipt_path?: string | null;
         };
         Relationships: [];
       };
