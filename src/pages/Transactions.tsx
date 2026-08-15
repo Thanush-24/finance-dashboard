@@ -1,5 +1,6 @@
 import { AlertCircle } from "lucide-react";
 import { useTransactions, type Transaction } from "../hooks/useTransactions";
+import AddTransactionForm from "../components/AddTransactionForm";
 
 const dateFormatter = new Intl.DateTimeFormat("en-IN", {
   day: "numeric",
@@ -137,7 +138,7 @@ function TransactionsTable({ transactions }: { transactions: Transaction[] }) {
 }
 
 function Transactions() {
-  const { transactions, loading, error } = useTransactions();
+  const { transactions, loading, error, refetch } = useTransactions();
 
   return (
     <div>
@@ -151,6 +152,10 @@ function Transactions() {
           {transactions.length === 1 ? "transaction" : "transactions"}
         </p>
       )}
+
+      <div className="mt-6">
+        <AddTransactionForm onAdded={refetch} />
+      </div>
 
       <div className="mt-6">
         {error && (
