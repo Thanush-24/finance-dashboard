@@ -1,11 +1,14 @@
-import { NavLink } from "react-router-dom";
+import { useState } from "react";
+import { NavLink, useNavigate } from "react-router-dom";
 import {
   Landmark,
   LayoutDashboard,
   ArrowLeftRight,
   PiggyBank,
   LogOut,
+  Loader2,
 } from "lucide-react";
+import { supabase } from "../lib/supabase";
 
 const navItems = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -18,6 +21,16 @@ interface SidebarProps {
 }
 
 function Sidebar({ onNavigate }: SidebarProps) {
+  const navigate = useNavigate();
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  async function handleLogout() {
+    setLoggingOut(true);
+    await supabase.auth.signOut();
+    onNavigate?.();
+    navigate("/login", { replace: true });
+  }
+
   return (
     <div className="flex h-full flex-col bg-ink text-paper">
       <div className="flex items-center gap-2 px-6 py-6">
@@ -55,10 +68,19 @@ function Sidebar({ onNavigate }: SidebarProps) {
       <div className="border-t border-white/10 px-3 py-4">
         <button
           type="button"
-          className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 font-body text-sm font-medium text-paper/70 transition-colors hover:bg-white/5 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ledger-light"
+          onClick={handleLogout}
+          disabled={loggingOut}
+          className="flex w-full touch-manipulation items-center gap-3 rounded-md px-3 py-2.5 font-body text-sm font-medium text-paper/70 transition-colors hover:bg-white/5 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ledger-light disabled:cursor-not-allowed disabled:opacity-60"
         >
-          <LogOut className="h-5 w-5" aria-hidden="true" />
-          Log out
+          {loggingOut ? (
+            <Loader2
+              className="h-5 w-5 animate-spin motion-reduce:animate-none"
+              aria-hidden="true"
+            />
+          ) : (
+            <LogOut className="h-5 w-5" aria-hidden="true" />
+          )}
+          {loggingOut ? "Logging out…" : "Log out"}
         </button>
       </div>
     </div>
