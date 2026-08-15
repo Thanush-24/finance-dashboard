@@ -1,1 +1,23 @@
 @import "tailwindcss";
+
+@theme {
+  --color-paper: #f1f3ef;
+  --color-paper-dim: #e7e9e3;
+  --color-ink: #101b2d;
+  --color-ink-soft: #58657a;
+  --color-ledger: #2f6b4f;
+  --color-ledger-light: #4f9271;
+  --color-ledger-soft: #e3ece6;
+  --color-rust: #9c4221;
+  --color-line: #d9dcd3;
+
+  --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-body: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace;
+}
+
+@layer base {
+  body {
+    @apply bg-paper text-ink font-body antialiased;
+  }
+}
