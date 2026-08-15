@@ -78,32 +78,77 @@ function guessCategory(text: string): string | null {
   return null;
 }
 
-const NUMBER_PATTERN = /[₹$]?\s?(\d{1,3}(?:,\d{2,3})*(?:\.\d{1,2})?)/g;
+// Matches comma-grouped numbers ("38,026.00", Indian lakh-style "1,23,456")
+// OR a plain digit run of any length ("38026.00") — the previous version
+// capped the integer part at 3 digits unless comma-grouped, so a plain
+// "38026.00" got truncated to "380" with the leftover "26.00" spuriously
+// picked up as an unrelated second match.
+const NUMBER_PATTERN =
+  /[₹$]?\s?(\d{1,3}(?:,\d{2,3})+(?:\.\d{1,2})?|\d+(?:\.\d{1,2})?)/g;
+
+// Line items and GST/quantity subtotals both contain the word "total" or a
+// currency-looking number, so a naive "last line matching /total/" search
+// can grab a line item's unit price instead of the actual grand total on a
+// dense invoice. These phrases are ranked from most to least specific — the
+// first rank with any match wins — and sub-total/tax-total lines are
+// excluded outright since they're never the amount actually paid.
+const EXCLUDE_TOTAL_LINE =
+  /sub[\s-]?total|total\s*(qty|quantity|gst|tax|cgst|sgst|igst)/i;
+const STRONG_TOTAL_PHRASES = [
+  /grand\s*total/i,
+  /total\s*amount/i,
+  /net\s*amount/i,
+  /amount\s*payable/i,
+  /balance\s*due/i,
+  /amount\s*due/i,
+];
+// Numbers on these lines are identifiers (tax IDs, phone/account numbers,
+// invoice/vehicle numbers), not amounts — excluded from the last-resort
+// fallback so a GSTIN digit run never gets mistaken for the total.
+const IDENTIFIER_LINE =
+  /gstin|phone|contact|mobile|account|a\/c|ifsc|hsn|invoice\s*no|inv\.?\s*no|vehicle|pin\s*code/i;
+
+function numbersOnLine(line: string): number[] {
+  return [...line.matchAll(NUMBER_PATTERN)]
+    .map((match) => parseFloat(match[1].replace(/,/g, "")))
+    .filter((value) => !Number.isNaN(value) && value > 0);
+}
+
+function largestOnQualifyingLines(
+  lines: string[],
+  qualifies: (line: string) => boolean,
+): number | null {
+  let best: number | null = null;
+  for (const line of lines) {
+    if (EXCLUDE_TOTAL_LINE.test(line) || !qualifies(line)) continue;
+    const numbers = numbersOnLine(line);
+    if (numbers.length === 0) continue;
+    const candidate = Math.max(...numbers);
+    if (best === null || candidate > best) best = candidate;
+  }
+  return best;
+}
 
 function guessAmount(text: string): number | null {
-  const totalLinePattern = /total|grand total|amount due|balance due/i;
-  let fromTotalLine: number | null = null;
+  const lines = text.split("\n");
 
-  for (const line of text.split("\n")) {
-    if (!totalLinePattern.test(line)) continue;
-    const matches = [...line.matchAll(NUMBER_PATTERN)];
-    if (matches.length === 0) continue;
-    const value = parseFloat(matches[matches.length - 1][1].replace(/,/g, ""));
-    if (!Number.isNaN(value) && value > 0) fromTotalLine = value;
+  for (const phrase of STRONG_TOTAL_PHRASES) {
+    const match = largestOnQualifyingLines(lines, (line) => phrase.test(line));
+    if (match !== null) return match;
   }
-  if (fromTotalLine !== null) return fromTotalLine;
 
-  // Fall back to the largest plausible currency-looking number anywhere
-  // in the receipt (usually the grand total, even without a "Total" label).
+  const looseMatch = largestOnQualifyingLines(lines, (line) =>
+    /total/i.test(line),
+  );
+  if (looseMatch !== null) return looseMatch;
+
+  // Last resort: largest plausible currency-looking number anywhere,
+  // skipping lines that are clearly identifiers rather than amounts.
   let largest: number | null = null;
-  for (const match of text.matchAll(NUMBER_PATTERN)) {
-    const value = parseFloat(match[1].replace(/,/g, ""));
-    if (
-      !Number.isNaN(value) &&
-      value > 0 &&
-      (largest === null || value > largest)
-    ) {
-      largest = value;
+  for (const line of lines) {
+    if (IDENTIFIER_LINE.test(line)) continue;
+    for (const value of numbersOnLine(line)) {
+      if (largest === null || value > largest) largest = value;
     }
   }
   return largest;
