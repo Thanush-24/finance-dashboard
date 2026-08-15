@@ -60,7 +60,7 @@ function TransactionForm({
 
   const formRef = useRef<HTMLDivElement>(null);
   const amountRef = useRef<HTMLInputElement>(null);
-  const categoryRef = useRef<HTMLSelectElement>(null);
+  const categoryRef = useRef<HTMLInputElement>(null);
   const dateRef = useRef<HTMLInputElement>(null);
   const errorRef = useRef<HTMLDivElement>(null);
 
@@ -87,8 +87,8 @@ function TransactionForm({
     if (!amount || Number.isNaN(parsedAmount) || parsedAmount <= 0) {
       nextFieldErrors.amount = "Enter an amount greater than 0.";
     }
-    if (!category) {
-      nextFieldErrors.category = "Select a category.";
+    if (!category.trim()) {
+      nextFieldErrors.category = "Enter a category.";
     }
     if (!date) {
       nextFieldErrors.date = "Select a date.";
@@ -112,7 +112,7 @@ function TransactionForm({
 
     const payload = {
       amount: parsedAmount,
-      category,
+      category: category.trim(),
       type,
       description: description.trim() || null,
       date,
@@ -253,10 +253,12 @@ function TransactionForm({
             <label htmlFor="category" className={labelClass}>
               Category
             </label>
-            <select
+            <input
               ref={categoryRef}
               id="category"
               name="category"
+              type="text"
+              list="category-suggestions"
               autoComplete="off"
               aria-invalid={!!fieldErrors.category}
               aria-describedby={
@@ -264,17 +266,14 @@ function TransactionForm({
               }
               value={category}
               onChange={(event) => setCategory(event.target.value)}
+              placeholder="Food…"
               className={`${inputClass} ${fieldErrors.category ? invalidInputClass : ""}`}
-            >
-              <option value="" disabled>
-                Select a category
-              </option>
+            />
+            <datalist id="category-suggestions">
               {CATEGORIES.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
+                <option key={option} value={option} />
               ))}
-            </select>
+            </datalist>
             {fieldErrors.category && (
               <p id="category-error" className={fieldErrorClass}>
                 {fieldErrors.category}
