@@ -23,6 +23,24 @@
   --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
   --font-body: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace;
+
+  /* Dark "fintech dashboard" theme — scoped to the Login/Signup auth
+     pages via AuthCard only. Deliberately isolated from the tokens
+     above so the rest of the app's light ledger-register theme is
+     untouched. */
+  --color-fintech-bg: #0b1120;
+  --color-fintech-card: #121a2e;
+  --color-fintech-border: rgba(255, 255, 255, 0.1);
+  --color-fintech-text: #f4f6fb;
+  --color-fintech-text-soft: #94a3c4;
+  --color-fintech-accent: #ff7a45;
+  --color-fintech-accent-deep: #c4293c;
+  --color-fintech-success: #4ade80;
+  --color-fintech-error: #ff6161;
+  --color-fintech-input-bg: rgba(255, 255, 255, 0.04);
+  --color-fintech-input-border: rgba(255, 255, 255, 0.14);
+  --color-fintech-button-start: #d1401f;
+  --color-fintech-button-end: #a8241f;
 }
 
 @layer base {

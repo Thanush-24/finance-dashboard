@@ -5,13 +5,14 @@ import { supabase } from "../lib/supabase";
 import AuthCard from "../components/AuthCard";
 
 const inputClass =
-  "w-full rounded-md border border-line bg-paper px-3 py-2 font-body text-sm text-ink placeholder:text-ink-soft/70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ledger";
+  "w-full rounded-md border border-fintech-input-border bg-fintech-input-bg px-3 py-2 font-body text-sm text-fintech-text placeholder:text-fintech-text-soft focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fintech-accent";
 
-const invalidInputClass = "border-rust/60";
+const invalidInputClass = "border-fintech-error/60";
 
-const labelClass = "mb-1.5 block font-body text-sm font-medium text-ink";
+const labelClass =
+  "mb-1.5 block font-body text-sm font-medium text-fintech-text";
 
-const fieldErrorClass = "mt-1 font-body text-xs text-rust";
+const fieldErrorClass = "mt-1 font-body text-xs text-fintech-error";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MIN_PASSWORD_LENGTH = 8;
@@ -100,7 +101,7 @@ function Signup() {
             ref={errorRef}
             aria-live="polite"
             tabIndex={-1}
-            className="mb-4 flex items-start gap-2 rounded-md border border-rust/30 bg-rust/5 px-3 py-2 font-body text-sm text-rust focus:outline-none"
+            className="mb-4 flex items-start gap-2 rounded-md border border-fintech-error/30 bg-fintech-error/10 px-3 py-2 font-body text-sm text-fintech-error focus:outline-none"
           >
             <AlertCircle
               className="mt-0.5 h-4 w-4 shrink-0"
@@ -115,7 +116,7 @@ function Signup() {
             ref={infoRef}
             role="status"
             tabIndex={-1}
-            className="mb-4 flex items-start gap-2 rounded-md border border-ledger/30 bg-ledger-soft px-3 py-2 font-body text-sm text-ledger focus:outline-none"
+            className="mb-4 flex items-start gap-2 rounded-md border border-fintech-success/30 bg-fintech-success/10 px-3 py-2 font-body text-sm text-fintech-success focus:outline-none"
           >
             <CheckCircle2
               className="mt-0.5 h-4 w-4 shrink-0"
@@ -206,7 +207,7 @@ function Signup() {
         <button
           type="submit"
           disabled={loading}
-          className="flex w-full touch-manipulation items-center justify-center gap-2 rounded-md bg-ledger px-4 py-2.5 font-body text-sm font-semibold text-white transition-colors hover:bg-ledger/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ledger disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex w-full touch-manipulation items-center justify-center gap-2 rounded-md bg-[linear-gradient(135deg,var(--color-fintech-button-start),var(--color-fintech-button-end))] px-4 py-2.5 font-body text-sm font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fintech-accent disabled:cursor-not-allowed disabled:opacity-60"
         >
           {loading && (
             <Loader2
@@ -218,11 +219,11 @@ function Signup() {
         </button>
       </form>
 
-      <p className="mt-6 text-center font-body text-sm text-ink-soft">
+      <p className="mt-6 text-center font-body text-sm text-fintech-text-soft">
         Already have an account?{" "}
         <Link
           to="/login"
-          className="touch-manipulation rounded-sm font-medium text-ledger hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ledger"
+          className="touch-manipulation rounded-sm font-medium text-fintech-accent hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fintech-accent"
         >
           Log in
         </Link>
