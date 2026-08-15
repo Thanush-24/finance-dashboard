@@ -35,21 +35,39 @@ interface FieldErrors {
   date?: string;
 }
 
-interface AddTransactionFormProps {
-  onAdded: () => void;
+interface TransactionFormProps {
+  editingTransaction: Transaction | null;
+  onSaved: () => void;
+  onCancelEdit: () => void;
 }
 
-function AddTransactionForm({ onAdded }: AddTransactionFormProps) {
+// Mount fresh on every switch between create mode and editing a specific
+// row: the parent renders this with key={editingTransaction?.id ?? "new"},
+// so local state can simply initialize from the prop rather than syncing
+// it via an effect.
+function TransactionForm({
+  editingTransaction,
+  onSaved,
+  onCancelEdit,
+}: TransactionFormProps) {
+  const isEditing = editingTransaction !== null;
   const { session } = useAuth();
-  const [type, setType] = useState<Transaction["type"]>("expense");
-  const [amount, setAmount] = useState("");
-  const [category, setCategory] = useState("");
-  const [description, setDescription] = useState("");
-  const [date, setDate] = useState(todayISODate);
+  const [type, setType] = useState<Transaction["type"]>(
+    editingTransaction?.type ?? "expense",
+  );
+  const [amount, setAmount] = useState(
+    editingTransaction ? String(editingTransaction.amount) : "",
+  );
+  const [category, setCategory] = useState(editingTransaction?.category ?? "");
+  const [description, setDescription] = useState(
+    editingTransaction?.description ?? "",
+  );
+  const [date, setDate] = useState(editingTransaction?.date ?? todayISODate);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const formRef = useRef<HTMLDivElement>(null);
   const amountRef = useRef<HTMLInputElement>(null);
   const categoryRef = useRef<HTMLSelectElement>(null);
   const dateRef = useRef<HTMLInputElement>(null);
@@ -58,6 +76,16 @@ function AddTransactionForm({ onAdded }: AddTransactionFormProps) {
   useEffect(() => {
     if (error) errorRef.current?.focus();
   }, [error]);
+
+  useEffect(() => {
+    if (isEditing) {
+      formRef.current?.scrollIntoView({ block: "nearest" });
+      amountRef.current?.focus();
+    }
+    // Only on mount: this component remounts fresh (via `key`) whenever
+    // edit mode is entered or the edited row changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -91,20 +119,40 @@ function AddTransactionForm({ onAdded }: AddTransactionFormProps) {
 
     if (!session) return;
 
-    setLoading(true);
-    const { error: insertError } = await supabase.from("transactions").insert({
-      user_id: session.user.id,
+    const payload = {
       amount: parsedAmount,
       category,
       type,
       description: description.trim() || null,
       date,
-    });
+    };
+
+    setLoading(true);
+    const { error: saveError } = isEditing
+      ? await supabase
+          .from("transactions")
+          .update(payload)
+          .eq("id", editingTransaction.id)
+      : await supabase
+          .from("transactions")
+          .insert({ ...payload, user_id: session.user.id });
     setLoading(false);
 
-    if (insertError) {
-      console.error("[transactions] insert failed:", insertError);
-      setError("Couldn’t add this transaction. Try again.");
+    if (saveError) {
+      console.error(
+        `[transactions] ${isEditing ? "update" : "insert"} failed:`,
+        saveError,
+      );
+      setError(
+        isEditing
+          ? "Couldn’t save these changes. Try again."
+          : "Couldn’t add this transaction. Try again.",
+      );
+      return;
+    }
+
+    if (isEditing) {
+      onSaved();
       return;
     }
 
@@ -116,13 +164,18 @@ function AddTransactionForm({ onAdded }: AddTransactionFormProps) {
     setFieldErrors({});
     amountRef.current?.focus();
 
-    onAdded();
+    onSaved();
   }
 
   return (
-    <div className="rounded-lg border border-line border-t-2 border-t-ledger bg-white p-5">
+    <div
+      ref={formRef}
+      className={`rounded-lg border border-line border-t-2 bg-white p-5 ${
+        isEditing ? "border-t-ledger-light" : "border-t-ledger"
+      }`}
+    >
       <h2 className="font-display text-base font-semibold text-ink">
-        Add a transaction
+        {isEditing ? "Edit transaction" : "Add a transaction"}
       </h2>
 
       <form onSubmit={handleSubmit} noValidate className="mt-4">
@@ -272,22 +325,40 @@ function AddTransactionForm({ onAdded }: AddTransactionFormProps) {
           />
         </div>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="mt-5 flex w-full touch-manipulation items-center justify-center gap-2 rounded-md bg-ledger px-4 py-2.5 font-body text-sm font-semibold text-white transition-colors hover:bg-ledger/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ledger disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
-        >
-          {loading && (
-            <Loader2
-              className="h-4 w-4 animate-spin motion-reduce:animate-none"
-              aria-hidden="true"
-            />
+        <div className="mt-5 flex gap-2">
+          <button
+            type="submit"
+            disabled={loading}
+            className="flex touch-manipulation items-center justify-center gap-2 rounded-md bg-ledger px-4 py-2.5 font-body text-sm font-semibold text-white transition-colors hover:bg-ledger/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ledger disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {loading && (
+              <Loader2
+                className="h-4 w-4 animate-spin motion-reduce:animate-none"
+                aria-hidden="true"
+              />
+            )}
+            {loading
+              ? isEditing
+                ? "Saving…"
+                : "Adding…"
+              : isEditing
+                ? "Save changes"
+                : "Add transaction"}
+          </button>
+          {isEditing && (
+            <button
+              type="button"
+              onClick={onCancelEdit}
+              disabled={loading}
+              className="touch-manipulation rounded-md px-4 py-2.5 font-body text-sm font-medium text-ink-soft transition-colors hover:bg-paper-dim focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ledger disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Cancel
+            </button>
           )}
-          {loading ? "Adding…" : "Add transaction"}
-        </button>
+        </div>
       </form>
     </div>
   );
 }
 
-export default AddTransactionForm;
+export default TransactionForm;

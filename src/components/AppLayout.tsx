@@ -1,63 +1,22 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Outlet } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import Sidebar from "./Sidebar";
-
-const FOCUSABLE_SELECTOR =
-  'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])';
+import { useDialogA11y } from "../hooks/useDialogA11y";
 
 function AppLayout() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const drawerRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
-  const wasOpenRef = useRef(false);
 
-  // Moves focus after the DOM actually reflects the open/closed state (in
-  // particular after `inert` is cleared from the header on close) rather
-  // than inline in the event handler that triggers the state change, since
-  // focusing an element still marked inert is silently a no-op.
-  useEffect(() => {
-    if (mobileNavOpen) {
-      wasOpenRef.current = true;
-      closeButtonRef.current?.focus();
-    } else if (wasOpenRef.current) {
-      wasOpenRef.current = false;
-      menuButtonRef.current?.focus();
-    }
-  }, [mobileNavOpen]);
-
-  useEffect(() => {
-    if (!mobileNavOpen) return;
-
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        setMobileNavOpen(false);
-        return;
-      }
-
-      if (event.key !== "Tab" || !drawerRef.current) return;
-
-      const focusable = Array.from(
-        drawerRef.current.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR),
-      );
-      if (focusable.length === 0) return;
-
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    }
-
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [mobileNavOpen]);
+  useDialogA11y({
+    open: mobileNavOpen,
+    onClose: () => setMobileNavOpen(false),
+    containerRef: drawerRef,
+    initialFocusRef: closeButtonRef,
+    restoreFocusRef: menuButtonRef,
+  });
 
   return (
     <div className="min-h-screen bg-paper md:flex">
