@@ -108,10 +108,35 @@ const STRONG_TOTAL_PHRASES = [
 const IDENTIFIER_LINE =
   /gstin|phone|contact|mobile|account|a\/c|ifsc|hsn|invoice\s*no|inv\.?\s*no|vehicle|pin\s*code/i;
 
-function numbersOnLine(line: string): number[] {
+interface LineNumber {
+  value: number;
+  // Whether the matched text included a decimal point ("x.xx"). OCR
+  // losing a comma or decimal point tends to merge unrelated digits into
+  // one large decimal-less integer (e.g. "14,145.84" misread as
+  // "1414588") — that shape is a strong signal the number is corrupted
+  // rather than a genuine amount, since every real total on these
+  // receipts is written with exactly two decimal places.
+  hasDecimal: boolean;
+}
+
+function numbersOnLine(line: string): LineNumber[] {
   return [...line.matchAll(NUMBER_PATTERN)]
-    .map((match) => parseFloat(match[1].replace(/,/g, "")))
-    .filter((value) => !Number.isNaN(value) && value > 0);
+    .map((match) => ({
+      value: parseFloat(match[1].replace(/,/g, "")),
+      hasDecimal: match[1].includes("."),
+    }))
+    .filter((n) => !Number.isNaN(n.value) && n.value > 0);
+}
+
+// Prefers the largest decimal-bearing candidate; only falls back to a
+// decimal-less integer if nothing decimal-bearing is available.
+function bestNumber(numbers: LineNumber[]): number | null {
+  const decimals = numbers.filter((n) => n.hasDecimal);
+  const pool = decimals.length > 0 ? decimals : numbers;
+  return pool.reduce<number | null>(
+    (best, n) => (best === null || n.value > best ? n.value : best),
+    null,
+  );
 }
 
 function largestOnQualifyingLines(
@@ -121,13 +146,18 @@ function largestOnQualifyingLines(
   let best: number | null = null;
   for (const line of lines) {
     if (EXCLUDE_TOTAL_LINE.test(line) || !qualifies(line)) continue;
-    const numbers = numbersOnLine(line);
-    if (numbers.length === 0) continue;
-    const candidate = Math.max(...numbers);
-    if (best === null || candidate > best) best = candidate;
+    const candidate = bestNumber(numbersOnLine(line));
+    if (candidate !== null && (best === null || candidate > best)) {
+      best = candidate;
+    }
   }
   return best;
 }
+
+// Real bills on this app rarely exceed this; only applied to the riskiest
+// last-resort tier below, where a corrupted OCR digit-merge is most
+// likely to masquerade as a plausible-looking huge total.
+const MAX_PLAUSIBLE_FALLBACK_AMOUNT = 10_000_000;
 
 function guessAmount(text: string): number | null {
   const lines = text.split("\n");
@@ -143,15 +173,15 @@ function guessAmount(text: string): number | null {
   if (looseMatch !== null) return looseMatch;
 
   // Last resort: largest plausible currency-looking number anywhere,
-  // skipping lines that are clearly identifiers rather than amounts.
-  let largest: number | null = null;
+  // skipping identifier lines and implausibly large candidates.
+  const candidates: LineNumber[] = [];
   for (const line of lines) {
     if (IDENTIFIER_LINE.test(line)) continue;
-    for (const value of numbersOnLine(line)) {
-      if (largest === null || value > largest) largest = value;
+    for (const n of numbersOnLine(line)) {
+      if (n.value <= MAX_PLAUSIBLE_FALLBACK_AMOUNT) candidates.push(n);
     }
   }
-  return largest;
+  return bestNumber(candidates);
 }
 
 function guessDate(text: string): string | null {
