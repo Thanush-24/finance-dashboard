@@ -1,7 +1,8 @@
 import { useMemo, useRef, useState } from "react";
-import { AlertCircle, Pencil, Trash2 } from "lucide-react";
+import { AlertCircle, Pencil, RotateCcw, Trash2 } from "lucide-react";
 import { useBudgets, type Budget } from "../hooks/useBudgets";
 import { useTransactions } from "../hooks/useTransactions";
+import { useAuth } from "../hooks/useAuth";
 import {
   currentMonthKey,
   filterByMonth,
@@ -11,6 +12,7 @@ import { amountFormatter } from "../lib/formatters";
 import { supabase } from "../lib/supabase";
 import BudgetForm from "../components/BudgetForm";
 import ConfirmDeleteDialog from "../components/ConfirmDeleteDialog";
+import ResetConfirmDialog from "../components/ResetConfirmDialog";
 
 function BudgetsSkeleton() {
   return (
@@ -129,6 +131,7 @@ function BudgetRow({
 }
 
 function Budgets() {
+  const { session } = useAuth();
   const { budgets, loading, error, refetch } = useBudgets();
   const { transactions, loading: transactionsLoading } = useTransactions();
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -136,6 +139,10 @@ function Budgets() {
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const deleteTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const [resetOpen, setResetOpen] = useState(false);
+  const [resetError, setResetError] = useState<string | null>(null);
+  const [resetting, setResetting] = useState(false);
+  const resetTriggerRef = useRef<HTMLButtonElement | null>(null);
 
   const editingBudget = budgets.find((b) => b.id === editingId) ?? null;
   const deletingBudget = budgets.find((b) => b.id === deletingId) ?? null;
@@ -186,17 +193,63 @@ function Budgets() {
     refetch();
   }
 
+  function handleResetRequest(trigger: HTMLButtonElement) {
+    resetTriggerRef.current = trigger;
+    setResetError(null);
+    setResetOpen(true);
+  }
+
+  function handleCancelReset() {
+    setResetOpen(false);
+    setResetError(null);
+  }
+
+  async function handleConfirmReset() {
+    if (!session) return;
+    setResetting(true);
+    const { error: resetRequestError } = await supabase
+      .from("budgets")
+      .delete()
+      .eq("user_id", session.user.id);
+    setResetting(false);
+
+    if (resetRequestError) {
+      console.error("[budgets] reset failed:", resetRequestError);
+      setResetError("Couldn’t reset your budgets. Try again.");
+      return;
+    }
+
+    setResetOpen(false);
+    setEditingId(null);
+    refetch();
+  }
+
   const isLoading = loading || transactionsLoading;
 
   return (
     <div>
-      <div inert={!!deletingBudget || undefined}>
-        <h1 className="font-display text-2xl font-semibold text-ink">
-          Budgets
-        </h1>
-        <p className="mt-1 font-body text-sm text-ink-soft">
-          Monthly limits by category
-        </p>
+      <div inert={!!deletingBudget || resetOpen || undefined}>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h1 className="font-display text-2xl font-semibold text-ink">
+              Budgets
+            </h1>
+            <p className="mt-1 font-body text-sm text-ink-soft">
+              Monthly limits by category
+            </p>
+          </div>
+
+          {!isLoading && !error && budgets.length > 0 && (
+            <button
+              type="button"
+              onClick={(event) => handleResetRequest(event.currentTarget)}
+              className="flex touch-manipulation items-center gap-1.5 rounded-md border border-rust/40 px-3 py-2 font-body text-sm font-medium text-rust transition-colors hover:bg-rust/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rust"
+            >
+              <RotateCcw className="h-4 w-4" aria-hidden="true" />
+              Reset all
+            </button>
+          )}
+        </div>
 
         <div className="mt-6">
           <BudgetForm
@@ -253,6 +306,18 @@ function Budgets() {
           onConfirm={handleConfirmDelete}
           onCancel={handleCancelDelete}
           triggerRef={deleteTriggerRef}
+        />
+      )}
+
+      {resetOpen && (
+        <ResetConfirmDialog
+          title="Reset all budgets?"
+          description={`This will permanently delete all ${budgets.length} ${budgets.length === 1 ? "budget" : "budgets"}.`}
+          resetting={resetting}
+          error={resetError}
+          onConfirm={handleConfirmReset}
+          onCancel={handleCancelReset}
+          triggerRef={resetTriggerRef}
         />
       )}
     </div>

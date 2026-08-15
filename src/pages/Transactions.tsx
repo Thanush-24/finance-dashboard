@@ -1,7 +1,8 @@
 import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { AlertCircle, Pencil, Repeat, Trash2 } from "lucide-react";
+import { AlertCircle, Pencil, Repeat, RotateCcw, Trash2 } from "lucide-react";
 import { useTransactions, type Transaction } from "../hooks/useTransactions";
+import { useAuth } from "../hooks/useAuth";
 import { supabase } from "../lib/supabase";
 import {
   dateFormatter,
@@ -11,6 +12,7 @@ import {
 import { transactionsToCsv, downloadCsv } from "../lib/exportTransactions";
 import TransactionForm from "../components/TransactionForm";
 import ConfirmDeleteDialog from "../components/ConfirmDeleteDialog";
+import ResetConfirmDialog from "../components/ResetConfirmDialog";
 
 function formatAmount(transaction: Transaction) {
   const formatted = amountFormatter.format(transaction.amount);
@@ -213,12 +215,17 @@ function TransactionsTable({
 }
 
 function Transactions() {
+  const { session } = useAuth();
   const { transactions, loading, error, refetch } = useTransactions();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const deleteTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const [resetOpen, setResetOpen] = useState(false);
+  const [resetError, setResetError] = useState<string | null>(null);
+  const [resetting, setResetting] = useState(false);
+  const resetTriggerRef = useRef<HTMLButtonElement | null>(null);
 
   const editingTransaction =
     transactions.find((t) => t.id === editingId) ?? null;
@@ -268,9 +275,40 @@ function Transactions() {
     downloadCsv(`transactions-${todayISODate()}.csv`, csv);
   }
 
+  function handleResetRequest(trigger: HTMLButtonElement) {
+    resetTriggerRef.current = trigger;
+    setResetError(null);
+    setResetOpen(true);
+  }
+
+  function handleCancelReset() {
+    setResetOpen(false);
+    setResetError(null);
+  }
+
+  async function handleConfirmReset() {
+    if (!session) return;
+    setResetting(true);
+    const { error: resetRequestError } = await supabase
+      .from("transactions")
+      .delete()
+      .eq("user_id", session.user.id);
+    setResetting(false);
+
+    if (resetRequestError) {
+      console.error("[transactions] reset failed:", resetRequestError);
+      setResetError("Couldn’t reset your transactions. Try again.");
+      return;
+    }
+
+    setResetOpen(false);
+    setEditingId(null);
+    refetch();
+  }
+
   return (
     <div>
-      <div inert={!!deletingTransaction || undefined}>
+      <div inert={!!deletingTransaction || resetOpen || undefined}>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h1 className="font-display text-2xl font-semibold text-ink">
@@ -299,6 +337,14 @@ function Transactions() {
               >
                 Monthly report
               </Link>
+              <button
+                type="button"
+                onClick={(event) => handleResetRequest(event.currentTarget)}
+                className="flex touch-manipulation items-center gap-1.5 rounded-md border border-rust/40 px-3 py-2 font-body text-sm font-medium text-rust transition-colors hover:bg-rust/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rust"
+              >
+                <RotateCcw className="h-4 w-4" aria-hidden="true" />
+                Reset all
+              </button>
             </div>
           )}
         </div>
@@ -354,6 +400,18 @@ function Transactions() {
           onConfirm={handleConfirmDelete}
           onCancel={handleCancelDelete}
           triggerRef={deleteTriggerRef}
+        />
+      )}
+
+      {resetOpen && (
+        <ResetConfirmDialog
+          title="Reset all transactions?"
+          description={`This will permanently delete all ${transactions.length} ${transactions.length === 1 ? "transaction" : "transactions"}.`}
+          resetting={resetting}
+          error={resetError}
+          onConfirm={handleConfirmReset}
+          onCancel={handleCancelReset}
+          triggerRef={resetTriggerRef}
         />
       )}
     </div>
