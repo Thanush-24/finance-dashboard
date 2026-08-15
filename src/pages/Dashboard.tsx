@@ -39,20 +39,17 @@ function DashboardSkeleton() {
       </div>
       <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-3">
         {[0, 1, 2].map((card) => (
-          <div
-            key={card}
-            className="rounded-lg border border-line bg-white p-5"
-          >
+          <div key={card} className="rounded-lg border border-line bg-card p-5">
             <div className="h-3 w-24 rounded bg-paper-dim" />
             <div className="mt-3 h-7 w-32 rounded bg-paper-dim" />
           </div>
         ))}
       </div>
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <div className="h-80 rounded-lg border border-line bg-white p-5">
+        <div className="h-80 rounded-lg border border-line bg-card p-5">
           <div className="h-3 w-40 rounded bg-paper-dim" />
         </div>
-        <div className="h-80 rounded-lg border border-line bg-white p-5">
+        <div className="h-80 rounded-lg border border-line bg-card p-5">
           <div className="h-3 w-40 rounded bg-paper-dim" />
         </div>
       </div>
@@ -71,7 +68,7 @@ function DashboardEmptyState() {
       </p>
       <Link
         to="/transactions"
-        className="mt-5 inline-flex touch-manipulation items-center justify-center rounded-md bg-ledger px-4 py-2.5 font-body text-sm font-semibold text-white transition-colors hover:bg-ledger/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ledger"
+        className="mt-5 inline-flex touch-manipulation items-center justify-center rounded-md bg-[linear-gradient(135deg,var(--color-button-start),var(--color-button-end))] px-4 py-2.5 font-body text-sm font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
       >
         Add a transaction
       </Link>
@@ -95,7 +92,7 @@ const SUMMARY_TONE_CLASS: Record<SummaryCardProps["tone"], string> = {
 
 function SummaryCard({ label, amount, tone, caption }: SummaryCardProps) {
   return (
-    <div className="rounded-lg border border-line bg-white p-5">
+    <div className="rounded-lg border border-line bg-card p-5">
       <p className="font-body text-xs font-medium uppercase tracking-wide text-ink-soft">
         {label}
       </p>
@@ -145,7 +142,7 @@ function PeriodToggle({
             onClick={() => onChange(option.value)}
             className={`touch-manipulation rounded px-3 py-1.5 font-body text-sm font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ledger ${
               active
-                ? "bg-white text-ink shadow-sm"
+                ? "bg-card text-ink shadow-sm"
                 : "text-ink-soft hover:text-ink"
             }`}
           >
@@ -170,7 +167,7 @@ function PieSliceLabel({
 
 function ExpensePieChart({ data }: { data: CategoryTotal[] }) {
   return (
-    <div className="rounded-lg border border-line bg-white p-5">
+    <div className="rounded-lg border border-line bg-card p-5">
       <h2 className="font-display text-base font-semibold text-ink">
         Expenses by category
       </h2>
@@ -193,7 +190,7 @@ function ExpensePieChart({ data }: { data: CategoryTotal[] }) {
                 cx="50%"
                 cy="50%"
                 outerRadius={85}
-                stroke="#fff"
+                stroke="var(--color-card)"
                 strokeWidth={2}
                 isAnimationActive={false}
                 label={PieSliceLabel}
@@ -215,11 +212,15 @@ function ExpensePieChart({ data }: { data: CategoryTotal[] }) {
                 contentStyle={{
                   fontFamily: "var(--font-body)",
                   fontSize: 13,
+                  backgroundColor: "var(--color-card)",
                   borderColor: "var(--color-line)",
+                  color: "var(--color-ink)",
                 }}
+                labelStyle={{ color: "var(--color-ink)" }}
                 itemStyle={{
                   fontFamily: "var(--font-mono)",
                   fontVariantNumeric: "tabular-nums",
+                  color: "var(--color-ink)",
                 }}
               />
               <Legend
@@ -251,7 +252,7 @@ function SquareDot({ cx, cy }: { cx?: number; cy?: number }) {
 
 function TrendLineChart({ data }: { data: MonthSeriesPoint[] }) {
   return (
-    <div className="rounded-lg border border-line bg-white p-5">
+    <div className="rounded-lg border border-line bg-card p-5">
       <h2 className="font-display text-base font-semibold text-ink">
         Income vs. expenses
       </h2>
@@ -300,11 +301,15 @@ function TrendLineChart({ data }: { data: MonthSeriesPoint[] }) {
               contentStyle={{
                 fontFamily: "var(--font-body)",
                 fontSize: 13,
+                backgroundColor: "var(--color-card)",
                 borderColor: "var(--color-line)",
+                color: "var(--color-ink)",
               }}
+              labelStyle={{ color: "var(--color-ink)" }}
               itemStyle={{
                 fontFamily: "var(--font-mono)",
                 fontVariantNumeric: "tabular-nums",
+                color: "var(--color-ink)",
               }}
             />
             <Legend
@@ -344,7 +349,7 @@ function InsightsSection({ insights }: { insights: Insight[] }) {
   if (insights.length === 0) return null;
 
   return (
-    <div className="mt-6 rounded-lg border border-line border-t-2 border-t-ledger-light bg-white p-5">
+    <div className="mt-6 rounded-lg border border-line border-t-2 border-t-ledger-light bg-card p-5">
       <h2 className="font-display text-base font-semibold text-ink">
         Insights
       </h2>

@@ -1,49 +1,53 @@
 @import "tailwindcss";
 
 @theme {
-  --color-paper: #f1f3ef;
-  --color-paper-dim: #e7e9e3;
-  --color-ink: #101b2d;
-  --color-ink-soft: #58657a;
-  --color-ledger: #2f6b4f;
-  --color-ledger-light: #4f9271;
-  --color-ledger-soft: #e3ece6;
-  --color-rust: #9c4221;
-  --color-line: #d9dcd3;
+  /* Dark "premium fintech dashboard" theme — deep navy base, elevated
+     card surface, orange-to-red accent for primary actions and brand
+     mark, green/red reserved for financial data valence (income vs.
+     expense, positive vs. negative, over vs. under budget). */
+  --color-paper: #0b1120;
+  --color-paper-dim: #10192e;
+  --color-card: #121a2e;
+  --color-ink: #f4f6fb;
+  --color-ink-soft: #94a3c4;
+  --color-line: rgba(255, 255, 255, 0.1);
+
+  --color-ledger: #4ade80;
+  --color-ledger-light: #6ee7b7;
+  --color-ledger-soft: rgba(74, 222, 128, 0.12);
+  --color-rust: #ff6161;
+
+  --color-input-bg: rgba(255, 255, 255, 0.04);
+  --color-input-border: rgba(255, 255, 255, 0.14);
+
+  /* Brand/CTA accent — used for the logo mark and every primary action
+     button, kept distinct from the green/red data-semantic colors. */
+  --color-accent: #ff7a45;
+  --color-accent-deep: #c4293c;
+  --color-button-start: #d1401f;
+  --color-button-end: #a8241f;
 
   /* Categorical chart palette — distinct from the semantic income/expense/
      alert colors above, so a chart category is never mistaken for one of
-     those meanings. */
-  --color-chart-brass: #96773f;
-  --color-chart-denim: #3d5b78;
-  --color-chart-plum: #6b3f4e;
-  --color-chart-olive: #5c6b3d;
-  --color-chart-clay: #7a4a2f;
+     those meanings. Brightened jewel tones for legibility against navy;
+     the green family is deliberately avoided here so a chart category is
+     never mistaken for the income/positive semantic. */
+  --color-chart-brass: #fbbf24;
+  --color-chart-denim: #60a5fa;
+  --color-chart-plum: #c084fc;
+  --color-chart-olive: #22d3ee;
+  --color-chart-clay: #fb7185;
 
   --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
   --font-body: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace;
-
-  /* Dark "fintech dashboard" theme — scoped to the Login/Signup auth
-     pages via AuthCard only. Deliberately isolated from the tokens
-     above so the rest of the app's light ledger-register theme is
-     untouched. */
-  --color-fintech-bg: #0b1120;
-  --color-fintech-card: #121a2e;
-  --color-fintech-border: rgba(255, 255, 255, 0.1);
-  --color-fintech-text: #f4f6fb;
-  --color-fintech-text-soft: #94a3c4;
-  --color-fintech-accent: #ff7a45;
-  --color-fintech-accent-deep: #c4293c;
-  --color-fintech-success: #4ade80;
-  --color-fintech-error: #ff6161;
-  --color-fintech-input-bg: rgba(255, 255, 255, 0.04);
-  --color-fintech-input-border: rgba(255, 255, 255, 0.14);
-  --color-fintech-button-start: #d1401f;
-  --color-fintech-button-end: #a8241f;
 }
 
 @layer base {
+  html {
+    color-scheme: dark;
+  }
+
   body {
     @apply bg-paper text-ink font-body antialiased;
   }

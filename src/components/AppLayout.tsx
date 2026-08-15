@@ -28,9 +28,9 @@ function AppLayout() {
 
       <header
         inert={mobileNavOpen || undefined}
-        className="flex items-center justify-between border-b border-line bg-ink px-4 py-3 md:hidden"
+        className="flex items-center justify-between border-b border-line bg-paper px-4 py-3 md:hidden"
       >
-        <span className="font-display text-base font-semibold text-paper">
+        <span className="font-display text-base font-semibold text-ink">
           Ledger
         </span>
         <button
@@ -39,7 +39,7 @@ function AppLayout() {
           onClick={() => setMobileNavOpen(true)}
           aria-label="Open navigation menu"
           aria-expanded={mobileNavOpen}
-          className="rounded-md p-2 text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ledger-light"
+          className="rounded-md p-2 text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ledger-light"
         >
           <Menu className="h-6 w-6" aria-hidden="true" />
         </button>
@@ -48,7 +48,7 @@ function AppLayout() {
       {mobileNavOpen && (
         <div className="fixed inset-0 z-50 md:hidden">
           <div
-            className="absolute inset-0 bg-ink/60"
+            className="absolute inset-0 bg-black/60"
             onClick={() => setMobileNavOpen(false)}
             aria-hidden="true"
           />
@@ -65,7 +65,7 @@ function AppLayout() {
               type="button"
               onClick={() => setMobileNavOpen(false)}
               aria-label="Close navigation menu"
-              className="absolute right-3 top-3 rounded-md p-2 text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ledger-light"
+              className="absolute right-3 top-3 rounded-md p-2 text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ledger-light"
             >
               <X className="h-5 w-5" aria-hidden="true" />
             </button>

@@ -15,7 +15,7 @@ function BudgetsSkeleton() {
     <div className="mt-6 animate-pulse motion-reduce:animate-none">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {[0, 1].map((row) => (
-          <div key={row} className="rounded-lg border border-line bg-white p-5">
+          <div key={row} className="rounded-lg border border-line bg-card p-5">
             <div className="h-3.5 w-24 rounded bg-paper-dim" />
             <div className="mt-3 h-4 w-40 rounded bg-paper-dim" />
             <div className="mt-3 h-2 w-full rounded-full bg-paper-dim" />
@@ -52,7 +52,7 @@ function BudgetRow({ budget, actualSpend, onEdit }: BudgetRowProps) {
   const barWidth = Math.min(percent, 100);
 
   return (
-    <div className="rounded-lg border border-line bg-white p-5">
+    <div className="rounded-lg border border-line bg-card p-5">
       <div className="flex items-start justify-between gap-4">
         <h3 className="font-body text-sm font-medium text-ink">
           {budget.category}

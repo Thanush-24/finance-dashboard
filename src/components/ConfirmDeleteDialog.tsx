@@ -33,7 +33,7 @@ function ConfirmDeleteDialog({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
       <div
-        className="absolute inset-0 bg-ink/60"
+        className="absolute inset-0 bg-black/60"
         onClick={onCancel}
         aria-hidden="true"
       />
@@ -43,7 +43,7 @@ function ConfirmDeleteDialog({
         aria-modal="true"
         aria-labelledby="confirm-delete-title"
         aria-describedby="confirm-delete-description"
-        className="relative w-full max-w-sm rounded-lg border border-line border-t-2 border-t-rust bg-white p-5"
+        className="relative w-full max-w-sm rounded-lg border border-line border-t-2 border-t-rust bg-card p-5"
       >
         <h2
           id="confirm-delete-title"
@@ -87,7 +87,7 @@ function ConfirmDeleteDialog({
             type="button"
             onClick={onConfirm}
             disabled={deleting}
-            className="flex touch-manipulation items-center gap-2 rounded-md bg-rust px-4 py-2 font-body text-sm font-semibold text-white transition-colors hover:bg-rust/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rust disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex touch-manipulation items-center gap-2 rounded-md bg-[#a8241f] px-4 py-2 font-body text-sm font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rust disabled:cursor-not-allowed disabled:opacity-60"
           >
             {deleting && (
               <Loader2

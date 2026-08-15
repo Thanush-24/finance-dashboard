@@ -32,9 +32,9 @@ function Sidebar({ onNavigate }: SidebarProps) {
   }
 
   return (
-    <div className="flex h-full flex-col bg-ink text-paper">
+    <div className="flex h-full flex-col border-r border-line bg-paper text-ink">
       <div className="flex items-center gap-2 px-6 py-6">
-        <Landmark className="h-6 w-6 text-ledger" aria-hidden="true" />
+        <Landmark className="h-6 w-6 text-accent" aria-hidden="true" />
         <span className="font-display text-lg font-semibold tracking-tight">
           Ledger
         </span>
@@ -53,7 +53,7 @@ function Sidebar({ onNavigate }: SidebarProps) {
                     "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ledger-light",
                     isActive
                       ? "border-ledger-light bg-white/5 text-white"
-                      : "border-transparent text-paper/70 hover:border-white/20 hover:bg-white/5 hover:text-white",
+                      : "border-transparent text-ink-soft hover:border-white/20 hover:bg-white/5 hover:text-white",
                   ].join(" ")
                 }
               >
@@ -70,7 +70,7 @@ function Sidebar({ onNavigate }: SidebarProps) {
           type="button"
           onClick={handleLogout}
           disabled={loggingOut}
-          className="flex w-full touch-manipulation items-center gap-3 rounded-md px-3 py-2.5 font-body text-sm font-medium text-paper/70 transition-colors hover:bg-white/5 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ledger-light disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex w-full touch-manipulation items-center gap-3 rounded-md px-3 py-2.5 font-body text-sm font-medium text-ink-soft transition-colors hover:bg-white/5 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ledger-light disabled:cursor-not-allowed disabled:opacity-60"
         >
           {loggingOut ? (
             <Loader2

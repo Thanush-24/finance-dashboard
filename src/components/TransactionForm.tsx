@@ -6,7 +6,7 @@ import type { Transaction } from "../hooks/useTransactions";
 import { CATEGORIES } from "../lib/categories";
 
 const inputClass =
-  "w-full rounded-md border border-line bg-paper px-3 py-2 font-body text-sm text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ledger";
+  "w-full rounded-md border border-input-border bg-input-bg px-3 py-2 font-body text-sm text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ledger";
 
 const invalidInputClass = "border-rust/60";
 
@@ -161,7 +161,7 @@ function TransactionForm({
   return (
     <div
       ref={formRef}
-      className={`rounded-lg border border-line border-t-2 bg-white p-5 ${
+      className={`rounded-lg border border-line border-t-2 bg-card p-5 ${
         isEditing ? "border-t-ledger-light" : "border-t-ledger"
       }`}
     >
@@ -320,7 +320,7 @@ function TransactionForm({
           <button
             type="submit"
             disabled={loading}
-            className="flex touch-manipulation items-center justify-center gap-2 rounded-md bg-ledger px-4 py-2.5 font-body text-sm font-semibold text-white transition-colors hover:bg-ledger/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ledger disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex touch-manipulation items-center justify-center gap-2 rounded-md bg-[linear-gradient(135deg,var(--color-button-start),var(--color-button-end))] px-4 py-2.5 font-body text-sm font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-60"
           >
             {loading && (
               <Loader2
